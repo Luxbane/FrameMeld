@@ -8,3 +8,4 @@ FrameForge.spec
 __pycache__/
 *.pyc
 README.txt
+FrameMeld.spec
