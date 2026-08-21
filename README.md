@@ -28,7 +28,6 @@ FrameMeld reuses Flowframes' RIFE CUDA implementation for interpolation, then en
 ## 🚀 Download FrameMeld
 
 > ### Ready-to-use Windows build
-> **No Python, FFmpeg, or RIFE installation required.**
 >
 > Download FrameMeld from either of the links below:
 
