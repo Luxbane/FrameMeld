@@ -1,3 +1,6 @@
+---
+license: gpl-3.0
+---
 # FrameForge
 
 RIFE video frame interpolation with NVENC encoding (AV1 / HEVC / H.264), wrapped in a simple desktop GUI.
@@ -24,7 +27,7 @@ FrameForge reuses Flowframes' RIFE CUDA implementation for interpolation, then e
 
 ## Download (recommended for most people)
 
-Grab the latest ready-to-run build from the **[Releases](../../releases)** page (or [itch.io](#), if you prefer). Extract the zip and run `FrameForge.exe`. On first launch, it'll walk you through downloading the runtime — see below.
+Grab the latest ready-to-run build from the [itch.io](#) page. Extract the zip and run `FrameForge.exe`. On first launch, it'll walk you through downloading the runtime — see below.
 
 ## How the runtime works
 
@@ -34,17 +37,17 @@ FrameForge itself is a small download. The heavy dependencies — FFmpeg, a Pyth
 ```
 This keeps the initial download small and lets FrameForge update those components independently of the app itself. The app won't let you start a job until FFmpeg, the Python runtime, and an AI model are all downloaded.
 
-These files are mirrored (as `.7z` archives) from their original sources on [Hugging Face](https://huggingface.co/Luxbane/frameforge-runtime) — see [Credits & Licenses](#credits--licenses) for where each component actually comes from.
+These files are mirrored (as `.7z` archives) from their original sources on [Hugging Face](https://huggingface.co/Luxbane/frameforge-runtime/tree/main) — see [Credits & Licenses](#credits--licenses) for where each component actually comes from.
 
 ## Building from source
 
-Only needed if you want to modify FrameForge, verify the build, or produce your own release. If you just want to use the app, use the [Download](#download-recommended-for-most-people) section above instead.
+Only needed if you want to modify FrameForge, verify the build, or produce your own release. If you just want to use the app, use the [Download](https://luxbane.itch.io/frameforge) section above instead.
 
 Requirements for building:
 
 1. **Python 3.11+** available as `py` on your system PATH.
 
-That's the only build-time requirement — building FrameForge just compiles the GUI itself with PyInstaller. It does **not** need Flowframes installed or FFmpeg downloaded locally; those are fetched by the app at runtime (see [How the runtime works](#how-the-runtime-works)), not baked in at build time.
+That's the only build-time requirement — building FrameForge just compiles the GUI itself with PyInstaller. It does **not** need FFmpeg downloaded locally; those are fetched by the app at runtime (see [How the runtime works](#how-the-runtime-works)), not baked in at build time.
 
 Steps:
 
@@ -89,7 +92,7 @@ README.md, LICENSE, THIRD_PARTY_LICENSES.md
 
 ## Credits & Licenses
 
-FrameForge is licensed under **GPL-3.0** (see [`LICENSE`](./LICENSE)), as it builds on GPL-3.0-licensed code from Flowframes.
+FrameForge is licensed under **GPL-3.0** (see [`LICENSE`](https://huggingface.co/Luxbane/frameforge-runtime/blob/main/LICENSE)), as it builds on GPL-3.0-licensed code from Flowframes.
 
 See [`THIRD_PARTY_LICENSES.md`](./THIRD_PARTY_LICENSES.md) for full attribution, including:
 - **RIFE** (MIT) — [hzwer/Practical-RIFE](https://github.com/hzwer/Practical-RIFE)
