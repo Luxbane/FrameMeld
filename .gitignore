@@ -1,0 +1,10 @@
+runtime/
+dist/
+build/
+.venv/
+work/
+config.json
+FrameForge.spec
+__pycache__/
+*.pyc
+README.txt
