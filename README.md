@@ -41,7 +41,7 @@ Download the latest Windows build directly from GitHub Releases.
 
 **[⬇️ Download FrameMeld from itch.io](https://luxbane.itch.io/framemeld)**
 
-Recommended if you prefer downloading the application through itch.io.
+If you prefer downloading the application through itch.io.
 
 ## How the runtime works
 
