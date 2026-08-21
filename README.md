@@ -98,11 +98,34 @@ README.md, LICENSE, THIRD_PARTY_LICENSES.md
 
 ## Roadmap
 
-- [ ] RIFE-NCNN (Vulkan) support for AMD/Intel GPUs
-- [ ] Non-Nvidia encoder options (AMF, QSV, software encoders)
-- [ ] Additional interpolation models (DAIN, FLAVR)
-- [ ] UI for switching/re-downloading AI models after initial setup
-- [ ] Optional settings panel for advanced/runtime overrides
+### 🧠 Interpolation Engines
+- [x] RIFE CUDA
+- [ ] RIFE NCNN/Vulkan
+- [ ] DAIN
+- [ ] XVFI
+- [ ] Additional RIFE models
+
+### 🎞️ Video Encoders
+- [x] NVIDIA NVENC
+- [ ] AMD AMF
+- [ ] Intel QSV
+- [ ] Software encoding fallback
+
+### ⚙️ Runtime & Distribution
+- [x] Automatic runtime download
+- [x] Per-user LocalAppData runtime
+- [x] Hugging Face runtime mirrors
+- [ ] Runtime version management
+- [ ] Runtime integrity/hash verification
+- [ ] Automatic runtime updates
+
+### 🖥️ Application
+- [x] Video metadata detection
+- [x] Automatic output naming
+- [x] Temporary file cleanup
+- [ ] Batch processing
+- [ ] Progress estimation
+- [ ] Queue system
 
 ## Credits & Licenses
 
