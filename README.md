@@ -2,7 +2,7 @@
 
 RIFE video frame interpolation with NVENC encoding (AV1 / HEVC / H.264), wrapped in a simple desktop GUI.
 
-FrameForge exists because [Flowframes](https://github.com/n00mkrad/flowframes) doesn't expose a fast, hardware-accelerated AV1 encode path out of the box. FrameForge reuses Flowframes' RIFE CUDA implementation for interpolation, then encodes the result straight to AV1/HEVC/H.264 using NVIDIA NVENC via FFmpeg — no manual frame extraction, no juggling separate tools.
+FrameForge reuses Flowframes' RIFE CUDA implementation for interpolation, then encodes the result straight to AV1/HEVC/H.264 using NVIDIA NVENC via FFmpeg — no manual frame extraction, no juggling separate tools.
 
 > **Nvidia GPU required.** Interpolation currently runs on RIFE CUDA, and encoding uses NVENC — both are Nvidia-only. AMD/Intel support (via RIFE-NCNN + AMF/QSV) is on the roadmap.
 
@@ -21,8 +21,6 @@ FrameForge exists because [Flowframes](https://github.com/n00mkrad/flowframes) d
 
 - **An NVIDIA GPU** with NVENC support for your target codec (AV1 NVENC requires RTX 40-series or newer; HEVC/H.264 NVENC support goes back further — check [NVIDIA's encoder support matrix](https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new)).
 - **Internet connection on first launch**, to download the runtime (see [How the runtime works](#how-the-runtime-works) below).
-
-That's it — no Flowframes install, no manual FFmpeg download, nothing else to set up.
 
 ## Download (recommended for most people)
 
