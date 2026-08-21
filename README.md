@@ -27,7 +27,7 @@ FrameForge reuses Flowframes' RIFE CUDA implementation for interpolation, then e
 
 ## Download (recommended for most people)
 
-Grab the latest ready-to-run build from the [itch.io](#) page. Extract the zip and run `FrameForge.exe`. On first launch, it'll walk you through downloading the runtime — see below.
+Grab the latest ready-to-run build from the [itch.io](https://luxbane.itch.io/frameforge) page. Extract the zip and run `FrameForge.exe`. On first launch, it'll walk you through downloading the runtime — see below.
 
 ## How the runtime works
 
