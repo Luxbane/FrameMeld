@@ -25,9 +25,24 @@ FrameMeld reuses Flowframes' RIFE CUDA implementation for interpolation, then en
 - **An NVIDIA GPU** with NVENC support for your target codec (AV1 NVENC requires RTX 40-series or newer; HEVC/H.264 NVENC support goes back further — check [NVIDIA's encoder support matrix](https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new)).
 - **Internet connection on first launch**, to download the runtime (see [How the runtime works](#how-the-runtime-works) below).
 
-## Download (recommended for most people)
+## 🚀 Download FrameMeld
 
-Grab the latest ready-to-run build from the [itch.io](https://luxbane.itch.io/framemeld) page. Extract the zip and run `FrameMeld.exe`. On first launch, it'll walk you through downloading the runtime — see below.
+> ### Ready-to-use Windows build
+> **No Python, FFmpeg, or RIFE installation required.**
+>
+> Download FrameMeld from either of the links below:
+
+### 🟦 GitHub Releases
+
+**[⬇️ Download the latest FrameMeld release](https://github.com/Luxbane/FrameMeld/releases/latest)**
+
+Download the latest Windows build directly from GitHub Releases.
+
+### 🟪 itch.io
+
+**[⬇️ Download FrameMeld from itch.io](https://luxbane.itch.io/framemeld)**
+
+Recommended if you prefer downloading the application through itch.io.
 
 ## How the runtime works
 
