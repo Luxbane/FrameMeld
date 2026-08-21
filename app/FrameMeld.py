@@ -4,13 +4,13 @@ from PySide6.QtCore import QThread,Signal
 from PySide6.QtWidgets import QApplication,QMainWindow,QWidget,QVBoxLayout,QGridLayout,QHBoxLayout,QLabel,QPushButton,QLineEdit,QFileDialog,QComboBox,QSpinBox,QTextEdit,QMessageBox,QGroupBox
 
 ROOT=Path(sys.executable).resolve().parent if getattr(sys,"frozen",False) else Path(__file__).resolve().parent.parent
-APPDATA=Path(os.environ.get("LOCALAPPDATA",str(Path.home())))/"FrameForge"
+APPDATA=Path(os.environ.get("LOCALAPPDATA",str(Path.home())))/"FrameMeld"
 RUNTIME=APPDATA/"runtime"
 CFG=APPDATA/"config.json"
 SEVENZIP=ROOT/"tools"/"7za.exe"
-URLS={"ffmpeg":"https://huggingface.co/Luxbane/frameforge-runtime/resolve/main/ffmpeg.7z",
-"py-amp":"https://huggingface.co/Luxbane/frameforge-runtime/resolve/main/py-amp.7z",
-"rife-cuda":"https://huggingface.co/Luxbane/frameforge-runtime/resolve/main/rife-cuda.7z"}
+URLS={"ffmpeg":"https://huggingface.co/Luxbane/FrameMeld/resolve/main/ffmpeg.7z",
+"py-amp":"https://huggingface.co/Luxbane/FrameMeld/resolve/main/py-amp.7z",
+"rife-cuda":"https://huggingface.co/Luxbane/FrameMeld/resolve/main/rife-cuda.7z"}
 CHECKS={"ffmpeg":RUNTIME/"ffmpeg"/"ffmpeg.exe","py-amp":RUNTIME/"py-amp"/"python.exe","rife-cuda":RUNTIME/"rife-cuda"/"rife.py"}
 MODELS=[
 ("rife-cuda","RIFE CUDA","NVIDIA GPUs (CUDA). Fastest option — recommended if you have an RTX/GTX card.",True),
@@ -118,7 +118,7 @@ class DownloadJob(QThread):
 
 class Main(QMainWindow):
     def __init__(self):
-        super().__init__();self.c=load();self.job=None;self.setWindowTitle("FrameForge v1.0");self.resize(900,700);self.ui();self.update_model_desc();self.refresh_setup()
+        super().__init__();self.c=load();self.job=None;self.setWindowTitle("FrameMeld v1.0");self.resize(900,700);self.ui();self.update_model_desc();self.refresh_setup()
     def pick(self,e,folder=False,filt="All files (*)"):
         p=QFileDialog.getExistingDirectory(self) if folder else QFileDialog.getOpenFileName(self,"Select","",filt)[0]
         if p:e.setText(p)
@@ -149,7 +149,7 @@ class Main(QMainWindow):
     def download_model(self):
         self.download(self.modelpick.currentData())
     def download_done(self,ok,msg):
-        if not ok:QMessageBox.critical(self,"FrameForge","Download failed:\n"+msg)
+        if not ok:QMessageBox.critical(self,"FrameMeld","Download failed:\n"+msg)
         self.dlprogress.setText("")
         self.refresh_setup()    
     def probe_input(self):
@@ -194,8 +194,8 @@ class Main(QMainWindow):
     def startjob(self):
         for k,e in self.f.items():self.c[k]=e.text()
         self.c["preset"]=self.preset.currentText();self.c["cq"]=self.cq.value();self.c["encoder"]=self.encoder.currentData();save(self.c)
-        if not Path(self.inp.text()).exists():return QMessageBox.warning(self,"FrameForge","Choose a valid input video.")
-        if not self.outdir.text() or not Path(self.outdir.text()).exists():return QMessageBox.warning(self,"FrameForge","Choose a valid output folder.")
+        if not Path(self.inp.text()).exists():return QMessageBox.warning(self,"FrameMeld","Choose a valid input video.")
+        if not self.outdir.text() or not Path(self.outdir.text()).exists():return QMessageBox.warning(self,"FrameMeld","Choose a valid output folder.")
         mult=2 if self.multi.currentText()=="2x" else 4
         fps=round(getattr(self,"src_fps",0)*mult)
         stem=Path(self.inp.text()).stem
@@ -203,7 +203,7 @@ class Main(QMainWindow):
         self.start.setEnabled(False);self.cancel.setEnabled(True);self.log.clear()
         self.job=Job(self.c,self.inp.text(),outpath,mult,float(self.scale.currentText()));self.job.log.connect(self.log.append);self.job.done.connect(self.finish);self.job.start()
     def finish(self,ok,msg):
-        self.start.setEnabled(True);self.cancel.setEnabled(False);(QMessageBox.information if ok else QMessageBox.critical)(self,"FrameForge",("Done:\n" if ok else "Failed:\n")+msg)
+        self.start.setEnabled(True);self.cancel.setEnabled(False);(QMessageBox.information if ok else QMessageBox.critical)(self,"FrameMeld",("Done:\n" if ok else "Failed:\n")+msg)
 
 if __name__=="__main__":
     a=QApplication(sys.argv);a.setStyle("Fusion");m=Main();m.show();sys.exit(a.exec())

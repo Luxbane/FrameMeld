@@ -1,8 +1,11 @@
-# FrameForge
+---
+license: gpl-3.0
+---
+# FrameMeld
 
 RIFE video frame interpolation with NVENC encoding (AV1 / HEVC / H.264), wrapped in a simple desktop GUI.
 
-FrameForge exists because [Flowframes](https://github.com/n00mkrad/flowframes) doesn't expose a fast, hardware-accelerated AV1 encode path out of the box. FrameForge reuses Flowframes' RIFE CUDA implementation for interpolation, then encodes the result straight to AV1/HEVC/H.264 using NVIDIA NVENC via FFmpeg — no manual frame extraction, no juggling separate tools.
+FrameMeld reuses Flowframes' RIFE CUDA implementation for interpolation, then encodes the result straight to AV1/HEVC/H.264 using NVIDIA NVENC via FFmpeg — no manual frame extraction, no juggling separate tools.
 
 > **Nvidia GPU required.** Interpolation currently runs on RIFE CUDA, and encoding uses NVENC — both are Nvidia-only. AMD/Intel support (via RIFE-NCNN + AMF/QSV) is on the roadmap.
 
@@ -22,59 +25,57 @@ FrameForge exists because [Flowframes](https://github.com/n00mkrad/flowframes) d
 - **An NVIDIA GPU** with NVENC support for your target codec (AV1 NVENC requires RTX 40-series or newer; HEVC/H.264 NVENC support goes back further — check [NVIDIA's encoder support matrix](https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new)).
 - **Internet connection on first launch**, to download the runtime (see [How the runtime works](#how-the-runtime-works) below).
 
-That's it — no Flowframes install, no manual FFmpeg download, nothing else to set up.
-
 ## Download (recommended for most people)
 
-Grab the latest ready-to-run build from the **[Releases](../../releases)** page (or [itch.io](#), if you prefer). Extract the zip and run `FrameForge.exe`. On first launch, it'll walk you through downloading the runtime — see below.
+Grab the latest ready-to-run build from the [itch.io](https://luxbane.itch.io/framemeld) page. Extract the zip and run `FrameMeld.exe`. On first launch, it'll walk you through downloading the runtime — see below.
 
 ## How the runtime works
 
-FrameForge itself is a small download. The heavy dependencies — FFmpeg, a Python distribution with PyTorch/CUDA, and the RIFE model — are fetched on first launch and stored in:
+FrameMeld itself is a small download. The heavy dependencies — FFmpeg, a Python distribution with PyTorch/CUDA, and the RIFE model — are fetched on first launch and stored in:
 ```
-%LOCALAPPDATA%\FrameForge\runtime\
+%LOCALAPPDATA%\FrameMeld\runtime\
 ```
-This keeps the initial download small and lets FrameForge update those components independently of the app itself. The app won't let you start a job until FFmpeg, the Python runtime, and an AI model are all downloaded.
+This keeps the initial download small and lets FrameMeld update those components independently of the app itself. The app won't let you start a job until FFmpeg, the Python runtime, and an AI model are all downloaded.
 
-These files are mirrored (as `.7z` archives) from their original sources on [Hugging Face](https://huggingface.co/Luxbane/frameforge-runtime) — see [Credits & Licenses](#credits--licenses) for where each component actually comes from.
+These files are mirrored (as `.7z` archives) from their original sources on [Hugging Face](https://huggingface.co/Luxbane/FrameMeld/tree/main) — see [Credits & Licenses](#credits--licenses) for where each component actually comes from.
 
 ## Building from source
 
-Only needed if you want to modify FrameForge, verify the build, or produce your own release. If you just want to use the app, use the [Download](#download-recommended-for-most-people) section above instead.
+Only needed if you want to modify FrameMeld, verify the build, or produce your own release. If you just want to use the app, use the [Download](https://luxbane.itch.io/framemeld) section above instead.
 
 Requirements for building:
 
 1. **Python 3.11+** available as `py` on your system PATH.
 
-That's the only build-time requirement — building FrameForge just compiles the GUI itself with PyInstaller. It does **not** need Flowframes installed or FFmpeg downloaded locally; those are fetched by the app at runtime (see [How the runtime works](#how-the-runtime-works)), not baked in at build time.
+That's the only build-time requirement — building FrameMeld just compiles the GUI itself with PyInstaller. It does **not** need FFmpeg downloaded locally; those are fetched by the app at runtime (see [How the runtime works](#how-the-runtime-works)), not baked in at build time.
 
 Steps:
 
 1. Clone this repo.
-2. Run `Build_FrameForge.bat`.
+2. Run `Build_FrameMeld.bat`.
 
 The script will:
 - Create a virtual environment, install PySide6 + PyInstaller
-- Build `dist/FrameForge/FrameForge.exe`, bundling in `app/tools/7za.exe` (used later to extract the downloaded runtime archives)
+- Build `dist/FrameMeld/FrameMeld.exe`, bundling in `app/tools/7za.exe` (used later to extract the downloaded runtime archives)
 
-The built app in `dist/FrameForge/` is ready to run as-is — launch `FrameForge.exe` and it'll prompt for the runtime download on first run, same as a downloaded release. This `dist/FrameForge/` folder is also what gets zipped and published to Releases/itch.io.
+The built app in `dist/FrameMeld/` is ready to run as-is — launch `FrameMeld.exe` and it'll prompt for the runtime download on first run, same as a downloaded release. This `dist/FrameMeld/` folder is also what gets zipped and published to Releases/itch.io.
 
 ## Repository contents
 
 This repo only tracks source code — no bundled runtime binaries or models:
 
 ```
-app/FrameForge.py       source code
+app/FrameMeld.py       source code
 app/tools/7za.exe       bundled archive tool (used to extract the downloaded runtime)
-Build_FrameForge.bat    build script
+Build_FrameMeld.bat    build script
 README.md, LICENSE, THIRD_PARTY_LICENSES.md
 ```
 
-`dist/`, `build/`, and `.venv/` are generated locally when you build and are not committed — excluded via `.gitignore`. `%LOCALAPPDATA%\FrameForge\runtime` (the downloaded FFmpeg/Python/RIFE files) lives outside the repo entirely, on the end user's machine.
+`dist/`, `build/`, and `.venv/` are generated locally when you build and are not committed — excluded via `.gitignore`. `%LOCALAPPDATA%\FrameMeld\runtime` (the downloaded FFmpeg/Python/RIFE files) lives outside the repo entirely, on the end user's machine.
 
 ## Usage
 
-1. Launch `FrameForge.exe`. On first run, download FFmpeg, the Python runtime, and an AI model from the **Setup** section at the top.
+1. Launch `FrameMeld.exe`. On first run, download FFmpeg, the Python runtime, and an AI model from the **Setup** section at the top.
 2. Click **Input** and select a video. Its resolution, framerate, frame count, and duration will appear automatically.
 3. Click **Output Folder** and pick where the result should be saved.
 4. Choose an output **Format** (.mkv / .mp4 / .mov / .webm).
@@ -91,7 +92,7 @@ README.md, LICENSE, THIRD_PARTY_LICENSES.md
 
 ## Credits & Licenses
 
-FrameForge is licensed under **GPL-3.0** (see [`LICENSE`](./LICENSE)), as it builds on GPL-3.0-licensed code from Flowframes.
+FrameMeld is licensed under **GPL-3.0** (see [`LICENSE`](https://huggingface.co/Luxbane/FrameMeld/blob/main/LICENSE)), as it builds on GPL-3.0-licensed code from Flowframes.
 
 See [`THIRD_PARTY_LICENSES.md`](./THIRD_PARTY_LICENSES.md) for full attribution, including:
 - **RIFE** (MIT) — [hzwer/Practical-RIFE](https://github.com/hzwer/Practical-RIFE)

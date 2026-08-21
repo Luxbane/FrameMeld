@@ -1,6 +1,6 @@
 # Third-Party Licenses
 
-FrameForge is licensed under GPL-3.0 (see [`LICENSE`](./LICENSE)). It builds on and redistributes components from the following third-party projects.
+FrameMeld is licensed under GPL-3.0 (see [`LICENSE`](./LICENSE)). It builds on and redistributes components from the following third-party projects.
 
 ## RIFE
 
@@ -8,7 +8,7 @@ Copyright (c) 2020 hzwer
 Licensed under the **MIT License**.
 Source: https://github.com/hzwer/Practical-RIFE
 
-The RIFE model and CUDA implementation used by FrameForge are RIFE's, integrated via Flowframes' packaging of it (see below).
+The RIFE model and CUDA implementation used by FrameMeld are RIFE's, integrated via Flowframes' packaging of it (see below).
 
 ## Flowframes
 
@@ -16,26 +16,26 @@ Copyright (c) n00mkrad
 Licensed under **GPL-3.0**.
 Source: https://github.com/n00mkrad/flowframes
 
-FrameForge uses a modified copy of Flowframes' `rife.py` CLI wrapper and its bundled Python (`py-amp`) runtime, which packages RIFE with the PyTorch/CUDA dependencies needed to run it. Because this code is GPL-3.0, FrameForge is licensed under GPL-3.0 as well, and its full source is available in this repository.
+FrameMeld uses a modified copy of Flowframes' `rife.py` CLI wrapper and its bundled Python (`py-amp`) runtime, which packages RIFE with the PyTorch/CUDA dependencies needed to run it. Because this code is GPL-3.0, FrameMeld is licensed under GPL-3.0 as well, and its full source is available in this repository.
 
 ## FFmpeg
 
-Licensed under **GPL** (build configuration dependent; the specific build FrameForge downloads is compiled with `--enable-gpl --enable-version3`).
+Licensed under **GPL** (build configuration dependent; the specific build FrameMeld downloads is compiled with `--enable-gpl --enable-version3`).
 BtbN builds used: https://github.com/BtbN/FFmpeg-Builds
 
-FFmpeg is downloaded by FrameForge at first launch and used for frame extraction and final video encoding (including NVENC).
+FFmpeg is downloaded by FrameMeld at first launch and used for frame extraction and final video encoding (including NVENC).
 
 ## 7-Zip / 7za.exe
 
-Licensed under **LGPL** (with some components under BSD-3-Clause/unRAR license restrictions that don't apply to the plain LGPL parts FrameForge uses).
+Licensed under **LGPL** (with some components under BSD-3-Clause/unRAR license restrictions that don't apply to the plain LGPL parts FrameMeld uses).
 Source: https://www.7-zip.org/
 
-The standalone `7za.exe` console tool is bundled with FrameForge to extract the downloaded runtime archives (`.7z` files).
+The standalone `7za.exe` console tool is bundled with FrameMeld to extract the downloaded runtime archives (`.7z` files).
 
 ## Runtime mirror on Hugging Face
 
-The FFmpeg, Python runtime (`py-amp`), and RIFE CUDA files that FrameForge downloads on first launch are re-hosted (as `.7z` archives, unmodified except for compression) at:
-https://huggingface.co/Luxbane/frameforge-runtime
+The FFmpeg, Python runtime (`py-amp`), and RIFE CUDA files that FrameMeld downloads on first launch are re-hosted (as `.7z` archives, unmodified except for compression) at:
+https://huggingface.co/Luxbane/FrameMeld-runtime
 
 This mirror exists purely for distribution convenience — the underlying components and their licenses are exactly as described above. It is not an independent claim of authorship over any of these components.
 
