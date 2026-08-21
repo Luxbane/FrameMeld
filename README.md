@@ -92,7 +92,7 @@ README.md, LICENSE, THIRD_PARTY_LICENSES.md
 
 ## Credits & Licenses
 
-FrameMeld is licensed under **GPL-3.0** (see [`LICENSE`](https://huggingface.co/Luxbane/FrameMeld/blob/main/LICENSE)), as it builds on GPL-3.0-licensed code from Flowframes.
+FrameMeld is licensed under **GPL-3.0** (see [`LICENSE`](https://github.com/Luxbane/FrameMeld?tab=GPL-3.0-1-ov-file)), as it builds on GPL-3.0-licensed code from Flowframes.
 
 See [`THIRD_PARTY_LICENSES.md`](./THIRD_PARTY_LICENSES.md) for full attribution, including:
 - **RIFE** (MIT) — [hzwer/Practical-RIFE](https://github.com/hzwer/Practical-RIFE)
