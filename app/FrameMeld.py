@@ -35,6 +35,7 @@ ENCODERS=[
 ENC_VENDOR={"av1_nvenc":"NVIDIA","hevc_nvenc":"NVIDIA","h264_nvenc":"NVIDIA",
 "av1_amf":"AMD","hevc_amf":"AMD","h264_amf":"AMD",
 "av1_qsv":"Intel","hevc_qsv":"Intel","h264_qsv":"Intel"}
+MODEL_VENDOR={"rife-cuda":"NVIDIA"}
 PRESETS={
 "nvenc":["p1","p2","p3","p4","p5","p6","p7"],
 "amf":["speed","balanced","quality"],
@@ -108,7 +109,8 @@ class Job(QThread):
             if work.exists():shutil.rmtree(work)
             src.mkdir(parents=True);dst.mkdir()
             self.log.emit("Extracting frames...")
-            self.p=subprocess.Popen([c["ffmpeg"],"-y","-i",self.inp,"-fps_mode","passthrough",str(src/"%08d.png")],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,errors="replace",creationflags=subprocess.CREATE_NO_WINDOW)
+            hwaccel=c.get("hwaccel","d3d11va")
+            self.p=subprocess.Popen([c["ffmpeg"],"-y","-hwaccel",hwaccel,"-i",self.inp,"-fps_mode","passthrough","-compression_level","1",str(src/"%08d.png")],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,errors="replace",creationflags=subprocess.CREATE_NO_WINDOW)
             for x in self.p.stdout:
                 cl=self.clean(x.rstrip())
                 if cl:self.log.emit(cl)
@@ -181,7 +183,7 @@ class DownloadJob(QThread):
 
 class Main(QMainWindow):
     def __init__(self):
-        super().__init__();self.c=load();self.job=None;self.show_setup=False;self.setWindowTitle("FrameMeld v1.1");self.resize(900,700);self.ui();self.update_model_desc();self.refresh_setup();self.refresh_preset();self.refresh_encoders()
+        super().__init__();self.c=load();self.job=None;self.show_setup=False;self.setWindowTitle("FrameMeld v1.2");self.resize(900,700);self.ui();self.update_model_desc();self.refresh_setup();self.refresh_preset();self.refresh_encoders()
     def pick(self,e,folder=False,filt="All files (*)"):
         p=QFileDialog.getExistingDirectory(self) if folder else QFileDialog.getOpenFileName(self,"Select","",filt)[0]
         if p:e.setText(p)
@@ -259,7 +261,12 @@ class Main(QMainWindow):
         self.modelpick=QComboBox()
         for key,label,desc,avail in MODELS:
             self.modelpick.addItem(label,key)
-            if not avail:self.modelpick.model().item(self.modelpick.count()-1).setEnabled(False)
+            req=MODEL_VENDOR.get(key)
+            hw_ok=(req is None) or (req in self.gpuvendors)
+            if not avail or not hw_ok:self.modelpick.model().item(self.modelpick.count()-1).setEnabled(False)
+        if not self.modelpick.model().item(self.modelpick.currentIndex()).isEnabled():
+            for i in range(self.modelpick.count()):
+                if self.modelpick.model().item(i).isEnabled():self.modelpick.setCurrentIndex(i);break
         self.modelpick.currentIndexChanged.connect(self.update_model_desc);self.modelpick.currentIndexChanged.connect(self.refresh_setup)
         self.setup=QGroupBox("Setup — Required Downloads");SU=QGridLayout(self.setup)
         self.st_ffmpeg=QLabel();self.bt_ffmpeg=QPushButton("Download");self.bt_ffmpeg.clicked.connect(lambda:self.download("ffmpeg"))
@@ -282,7 +289,9 @@ class Main(QMainWindow):
         row=QHBoxLayout();self.start=QPushButton("START");self.start.clicked.connect(self.startjob);self.cancel=QPushButton("CANCEL");self.cancel.clicked.connect(lambda:self.job and self.job.stop());self.cancel.setEnabled(False);row.addWidget(self.start);row.addWidget(self.cancel);L.addLayout(row);self.log=QTextEdit();self.log.setReadOnly(True);L.addWidget(self.log)
     def startjob(self):
         for k,e in self.f.items():self.c[k]=e.text()
-        self.c["preset"]=self.preset.currentText();self.c["cq"]=self.cq.value();self.c["encoder"]=self.encoder.currentData();self.c["engine"]=self.modelpick.currentData();save(self.c)
+        self.c["preset"]=self.preset.currentText();self.c["cq"]=self.cq.value();self.c["encoder"]=self.encoder.currentData();self.c["engine"]=self.modelpick.currentData()
+        self.c["hwaccel"]="cuda" if "NVIDIA" in self.gpuvendors else "d3d11va"
+        save(self.c)
         if not Path(self.inp.text()).exists():return QMessageBox.warning(self,"FrameMeld","Choose a valid input video.")
         if not self.outdir.text() or not Path(self.outdir.text()).exists():return QMessageBox.warning(self,"FrameMeld","Choose a valid output folder.")
         mult=2 if self.multi.currentText()=="2x" else 4

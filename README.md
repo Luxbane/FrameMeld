@@ -13,7 +13,8 @@ FrameMeld reuses Flowframes' RIFE implementation (CUDA or NCNN/Vulkan) for inter
 
 - **Two interpolation engines**: RIFE CUDA (NVIDIA, fastest) and RIFE NCNN (NVIDIA/AMD/Intel via Vulkan), switchable from the main screen
 - **Four encoder backends**: NVIDIA NVENC, AMD AMF, Intel QSV, and software (SVT-AV1 / x265 / x264) — each with AV1/HEVC/H.264 options
-- GPU auto-detection — encoder options that don't match your installed hardware are automatically disabled
+- GPU auto-detection — encoder options that don't match your installed hardware are automatically disabled, and RIFE CUDA is only selectable when an NVIDIA GPU is actually present
+- Hardware-accelerated frame extraction (NVDEC on NVIDIA, DirectX-based decode elsewhere) to reduce CPU load during the extract step
 - Vendor-appropriate presets (NVENC's p1–p7, AMF's speed/balanced/quality, QSV/software's veryfast–veryslow) that switch automatically with your encoder choice
 - Configurable CQ/CRF
 - Auto video info preview (resolution, framerate, frame count, duration) on input selection
@@ -130,6 +131,8 @@ README.md, LICENSE, THIRD_PARTY_LICENSES.md
 - [x] Temporary file cleanup
 - [x] GPU auto-detection
 - [x] Vendor-aware encoder/preset filtering
+- [x] Vendor-aware engine filtering (RIFE CUDA disabled without NVIDIA)
+- [x] Hardware-accelerated frame extraction
 - [ ] Batch processing
 - [ ] Progress estimation
 - [ ] Queue system

@@ -1,8 +1,8 @@
 @echo off
 setlocal EnableExtensions
-title FrameMeld Builder v1.1
+title FrameMeld Builder v1.2
 echo ============================================
-echo FrameMeld Builder v1.1
+echo FrameMeld Builder v1.2
 echo ============================================
 where py >nul 2>&1
 if errorlevel 1 goto NOPYTHON
