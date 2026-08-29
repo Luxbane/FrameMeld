@@ -101,9 +101,6 @@ README.md, LICENSE, THIRD_PARTY_LICENSES.md
 ### 🧠 Interpolation Engines
 - [x] RIFE CUDA
 - [ ] RIFE NCNN/Vulkan
-- [ ] DAIN
-- [ ] XVFI
-- [ ] Additional RIFE models
 
 ### 🎞️ Video Encoders
 - [x] NVIDIA NVENC
