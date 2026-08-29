@@ -189,16 +189,20 @@ class Main(QMainWindow):
         if p:e.setText(p)
     def update_model_desc(self):
         key=self.modelpick.currentData()
+        if key is None:self.modeldesc.setText("");return
         for k,lab,desc,avail in MODELS:
             if k==key:self.modeldesc.setText(desc)
     def refresh_encoders(self):
         for i in range(self.encoder.count()):
             val=self.encoder.itemData(i)
+            if val is None:continue
             vendor=ENC_VENDOR.get(val)
             ok=(vendor is None) or (vendor in self.gpuvendors)
             self.encoder.model().item(i).setEnabled(ok)
     def refresh_preset(self):
         enc=self.encoder.currentData()
+        if enc is None:
+            self.preset.blockSignals(True);self.preset.clear();self.preset.blockSignals(False);return
         grp=preset_group(enc)
         self.preset.blockSignals(True)
         self.preset.clear();self.preset.addItems(PRESETS[grp])
@@ -211,22 +215,29 @@ class Main(QMainWindow):
         self.st_ffmpeg.setText("✓ Installed" if "ffmpeg" not in miss else "Not installed")
         self.bt_ffmpeg.setEnabled("ffmpeg" in miss)
         modelkey=self.modelpick.currentData()
-        py_needed=modelkey=="rife-cuda"
-        if py_needed:
-            self.st_py.setText("✓ Installed" if "py-amp" not in miss else "Not installed")
-            self.bt_py.setEnabled("py-amp" in miss)
-            py_ok="py-amp" not in miss
+        if modelkey is None:
+            self.st_py.setText("—");self.bt_py.setEnabled(False)
+            self.st_model.setText("Choose an engine first");self.bt_model.setEnabled(False)
+            model_ok=False;py_ok=True
+            self.enginegroup.setTitle("RIFE -> Encoder")
         else:
-            self.st_py.setText("Not needed for this engine")
-            self.bt_py.setEnabled(False)
-            py_ok=True
-        model_ok=CHECKS.get(modelkey,Path("nonexistent")).exists()
-        self.st_model.setText("✓ Installed" if model_ok else "Not installed")
-        self.bt_model.setEnabled(not model_ok)
-        allgood=("ffmpeg" not in miss) and py_ok and model_ok
+            py_needed=modelkey=="rife-cuda"
+            if py_needed:
+                self.st_py.setText("✓ Installed" if "py-amp" not in miss else "Not installed")
+                self.bt_py.setEnabled("py-amp" in miss)
+                py_ok="py-amp" not in miss
+            else:
+                self.st_py.setText("Not needed for this engine")
+                self.bt_py.setEnabled(False)
+                py_ok=True
+            model_ok=CHECKS.get(modelkey,Path("nonexistent")).exists()
+            self.st_model.setText("✓ Installed" if model_ok else "Not installed")
+            self.bt_model.setEnabled(not model_ok)
+            self.enginegroup.setTitle("RIFE CUDA -> NVENC" if modelkey=="rife-cuda" else "RIFE NCNN -> NVENC")
+        enc_ok=self.encoder.currentData() is not None
+        allgood=("ffmpeg" not in miss) and py_ok and model_ok and enc_ok
         self.setup.setVisible((not allgood) or self.show_setup)
         self.start.setEnabled(allgood)
-        self.enginegroup.setTitle("RIFE CUDA" if modelkey=="rife-cuda" else "RIFE NCNN")
     def download(self,key):
         self.bt_ffmpeg.setEnabled(False);self.bt_py.setEnabled(False);self.bt_model.setEnabled(False)
         self.dl=DownloadJob(key,URLS[key])
@@ -259,14 +270,14 @@ class Main(QMainWindow):
         self.togglesetup=QPushButton("Runtime Downloads");self.togglesetup.clicked.connect(self.toggle_setup);top.addWidget(self.togglesetup)
         L.addLayout(top)
         self.modelpick=QComboBox()
+        self.modelpick.addItem("-- Please choose an engine --",None)
+        self.modelpick.model().item(0).setEnabled(False)
         for key,label,desc,avail in MODELS:
             self.modelpick.addItem(label,key)
             req=MODEL_VENDOR.get(key)
             hw_ok=(req is None) or (req in self.gpuvendors)
             if not avail or not hw_ok:self.modelpick.model().item(self.modelpick.count()-1).setEnabled(False)
-        if not self.modelpick.model().item(self.modelpick.currentIndex()).isEnabled():
-            for i in range(self.modelpick.count()):
-                if self.modelpick.model().item(i).isEnabled():self.modelpick.setCurrentIndex(i);break
+        self.modelpick.setCurrentIndex(0)
         self.modelpick.currentIndexChanged.connect(self.update_model_desc);self.modelpick.currentIndexChanged.connect(self.refresh_setup)
         self.setup=QGroupBox("Setup — Required Downloads");SU=QGridLayout(self.setup)
         self.st_ffmpeg=QLabel();self.bt_ffmpeg=QPushButton("Download");self.bt_ffmpeg.clicked.connect(lambda:self.download("ffmpeg"))
@@ -284,12 +295,14 @@ class Main(QMainWindow):
         bo=QPushButton("Output Folder");bo.clicked.connect(lambda:self.pick(self.outdir,True))
         self.fmt=QComboBox();self.fmt.addItems([".mkv",".mp4",".mov",".webm"])
         I.addWidget(QLabel("Input:"),0,0);I.addWidget(self.inp,0,1);I.addWidget(bi,0,2);I.addWidget(QLabel("Output Folder:"),1,0);I.addWidget(self.outdir,1,1);I.addWidget(bo,1,2);I.addWidget(QLabel("Format:"),2,0);I.addWidget(self.fmt,2,1);self.info=QLabel("");I.addWidget(self.info,3,0,1,3);L.addWidget(io)
-        self.enginegroup=QGroupBox("RIFE -> NVENC");S=QGridLayout(self.enginegroup);self.multi=QComboBox();self.multi.addItems(["2x","4x"]);self.scale=QComboBox();self.scale.addItems(["0.25","0.5","1.0","2.0","4.0"]);self.scale.setCurrentText("1.0");self.preset=QComboBox();self.cq=QSpinBox();self.cq.setRange(0,51);self.cq.setValue(int(self.c["cq"]));self.encoder=QComboBox();[self.encoder.addItem(lab,val) for lab,val in ENCODERS];idx=self.encoder.findData(self.c.get("encoder","av1_nvenc"));self.encoder.setCurrentIndex(idx if idx>=0 else 0);self.encoder.currentIndexChanged.connect(self.refresh_preset)
+        self.enginegroup=QGroupBox("RIFE -> NVENC");S=QGridLayout(self.enginegroup);self.multi=QComboBox();self.multi.addItems(["2x","4x"]);self.scale=QComboBox();self.scale.addItems(["0.25","0.5","1.0","2.0","4.0"]);self.scale.setCurrentText("1.0");self.preset=QComboBox();self.cq=QSpinBox();self.cq.setRange(0,51);self.cq.setValue(int(self.c["cq"]));self.encoder=QComboBox();self.encoder.addItem("-- Please choose an encoder --",None);self.encoder.model().item(0).setEnabled(False);[self.encoder.addItem(lab,val) for lab,val in ENCODERS];self.encoder.setCurrentIndex(0);self.encoder.currentIndexChanged.connect(self.refresh_preset);self.encoder.currentIndexChanged.connect(self.refresh_setup)
         S.addWidget(QLabel("Engine:"),0,0);S.addWidget(self.modelpick,0,1);S.addWidget(QLabel("Multiplier:"),0,2);S.addWidget(self.multi,0,3);S.addWidget(QLabel("Scale:"),1,0);S.addWidget(self.scale,1,1);S.addWidget(QLabel("Encoder:"),1,2);S.addWidget(self.encoder,1,3);S.addWidget(QLabel("Preset:"),2,2);S.addWidget(self.preset,2,3);S.addWidget(QLabel("CQ:"),3,2);S.addWidget(self.cq,3,3);L.addWidget(self.enginegroup)
         row=QHBoxLayout();self.start=QPushButton("START");self.start.clicked.connect(self.startjob);self.cancel=QPushButton("CANCEL");self.cancel.clicked.connect(lambda:self.job and self.job.stop());self.cancel.setEnabled(False);row.addWidget(self.start);row.addWidget(self.cancel);L.addLayout(row);self.log=QTextEdit();self.log.setReadOnly(True);L.addWidget(self.log)
     def startjob(self):
         for k,e in self.f.items():self.c[k]=e.text()
-        self.c["preset"]=self.preset.currentText();self.c["cq"]=self.cq.value();self.c["encoder"]=self.encoder.currentData();self.c["engine"]=self.modelpick.currentData()
+        engine=self.modelpick.currentData();enc=self.encoder.currentData()
+        if engine is None or enc is None:return QMessageBox.warning(self,"FrameMeld","Choose an engine and an encoder first.")
+        self.c["preset"]=self.preset.currentText();self.c["cq"]=self.cq.value();self.c["encoder"]=enc;self.c["engine"]=engine
         self.c["hwaccel"]="cuda" if "NVIDIA" in self.gpuvendors else "d3d11va"
         save(self.c)
         if not Path(self.inp.text()).exists():return QMessageBox.warning(self,"FrameMeld","Choose a valid input video.")
