@@ -3,39 +3,60 @@ license: gpl-3.0
 ---
 # FrameMeld
 
-RIFE video frame interpolation with NVENC encoding (AV1 / HEVC / H.264), wrapped in a simple desktop GUI.
+RIFE video frame interpolation with hardware-accelerated encoding (AV1 / HEVC / H.264), wrapped in a simple desktop GUI.
 
-FrameMeld reuses Flowframes' RIFE CUDA implementation for interpolation, then encodes the result straight to AV1/HEVC/H.264 using NVIDIA NVENC via FFmpeg — no manual frame extraction, no juggling separate tools.
+FrameMeld reuses Flowframes' RIFE implementation (CUDA or NCNN/Vulkan) for interpolation, then encodes the result straight to AV1/HEVC/H.264 using your GPU's hardware encoder via FFmpeg — no manual frame extraction, no juggling separate tools.
 
-> **Nvidia GPU required.** Interpolation currently runs on RIFE CUDA, and encoding uses NVENC — both are Nvidia-only. AMD/Intel support (via RIFE-NCNN + AMF/QSV) is on the roadmap.
+> **NVIDIA, AMD, and Intel GPUs are all supported.** Pick RIFE CUDA (NVIDIA only, fastest) or RIFE NCNN (NVIDIA/AMD/Intel via Vulkan) for interpolation, and NVENC/AMF/QSV/software for encoding — independently of each other. FrameMeld auto-detects your GPU(s) and disables encoder options your hardware doesn't support.
 
 ## Features
 
-- RIFE CUDA interpolation (2x / 4x)
-- Encode to AV1 NVENC, HEVC NVENC, or H.264 NVENC
-- Configurable preset & CQ
+- **Two interpolation engines**: RIFE CUDA (NVIDIA, fastest) and RIFE NCNN (NVIDIA/AMD/Intel via Vulkan), switchable from the main screen
+- **Four encoder backends**: NVIDIA NVENC, AMD AMF, Intel QSV, and software (SVT-AV1 / x265 / x264) — each with AV1/HEVC/H.264 options
+- GPU auto-detection — encoder options that don't match your installed hardware are automatically disabled
+- Vendor-appropriate presets (NVENC's p1–p7, AMF's speed/balanced/quality, QSV/software's veryfast–veryslow) that switch automatically with your encoder choice
+- Configurable CQ/CRF
 - Auto video info preview (resolution, framerate, frame count, duration) on input selection
 - Auto-generated output filename (`{name} {fps}fps.{ext}`) — just pick a folder and format
 - Clean, filtered log output (no raw command dumps or FFmpeg banner spam)
-- First-launch setup downloads the required runtime (FFmpeg + Python + RIFE model) automatically — no separate installs needed
+- First-launch setup downloads only the runtime components you need (FFmpeg + your chosen interpolation engine) — no separate installs needed
 - Temporary working files are cleaned up automatically after a run finishes or is cancelled
 
 ## Requirements
 
-- **An NVIDIA GPU** with NVENC support for your target codec (AV1 NVENC requires RTX 40-series or newer; HEVC/H.264 NVENC support goes back further — check [NVIDIA's encoder support matrix](https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new)).
+- **A GPU with hardware encode support** for your target codec:
+  - NVIDIA: NVENC (AV1 NVENC needs RTX 40-series or newer; HEVC/H.264 NVENC go back further) — see [NVIDIA's encoder support matrix](https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new)
+  - AMD: AMF-capable GPU for AV1/HEVC/H.264 AMF encoding
+  - Intel: QSV-capable GPU for AV1/HEVC/H.264 QSV encoding
+  - No hardware encoder? Software encoding (SVT-AV1/x265/x264) works on any CPU, just slower.
+- **RIFE CUDA** (optional, NVIDIA only) requires an NVIDIA GPU. **RIFE NCNN** works on NVIDIA/AMD/Intel via Vulkan.
 - **Internet connection on first launch**, to download the runtime (see [How the runtime works](#how-the-runtime-works) below).
 
-## Download (recommended for most people)
+## 🚀 Download FrameMeld
 
-Grab the latest ready-to-run build from the [itch.io](https://luxbane.itch.io/framemeld) page. Extract the zip and run `FrameMeld.exe`. On first launch, it'll walk you through downloading the runtime — see below.
+> ### Ready-to-use Windows build
+>
+> Download FrameMeld from either of the links below:
+
+### 🟦 GitHub Releases
+
+**[⬇️ Download the latest FrameMeld release](https://github.com/Luxbane/FrameMeld/releases/latest)**
+
+Download the latest Windows build directly from GitHub Releases.
+
+### 🟪 itch.io
+
+**[⬇️ Download FrameMeld from itch.io](https://luxbane.itch.io/framemeld)**
+
+If you prefer downloading the application through itch.io.
 
 ## How the runtime works
 
-FrameMeld itself is a small download. The heavy dependencies — FFmpeg, a Python distribution with PyTorch/CUDA, and the RIFE model — are fetched on first launch and stored in:
+FrameMeld itself is a small download. The heavier dependencies — FFmpeg, and your chosen RIFE engine (CUDA needs a Python+PyTorch distribution; NCNN is just a small portable executable) — are fetched on first launch and stored in:
 ```
 %LOCALAPPDATA%\FrameMeld\runtime\
 ```
-This keeps the initial download small and lets FrameMeld update those components independently of the app itself. The app won't let you start a job until FFmpeg, the Python runtime, and an AI model are all downloaded.
+This keeps the initial download small and lets FrameMeld update those components independently of the app itself. You only need to download the engine you actually plan to use — switching engines later just downloads the other one. The app won't let you start a job until FFmpeg and your selected AI model are downloaded.
 
 These files are mirrored (as `.7z` archives) from their original sources on [Hugging Face](https://huggingface.co/Luxbane/FrameMeld/tree/main) — see [Credits & Licenses](#credits--licenses) for where each component actually comes from.
 
@@ -71,31 +92,55 @@ Build_FrameMeld.bat    build script
 README.md, LICENSE, THIRD_PARTY_LICENSES.md
 ```
 
-`dist/`, `build/`, and `.venv/` are generated locally when you build and are not committed — excluded via `.gitignore`. `%LOCALAPPDATA%\FrameMeld\runtime` (the downloaded FFmpeg/Python/RIFE files) lives outside the repo entirely, on the end user's machine.
+`dist/`, `build/`, and `.venv/` are generated locally when you build and are not committed — excluded via `.gitignore`. `%LOCALAPPDATA%\FrameMeld\runtime` (the downloaded FFmpeg/RIFE engine files) lives outside the repo entirely, on the end user's machine.
 
 ## Usage
 
-1. Launch `FrameMeld.exe`. On first run, download FFmpeg, the Python runtime, and an AI model from the **Setup** section at the top.
+1. Launch `FrameMeld.exe`. Pick an interpolation engine from the **Engine** dropdown, then use the **Setup** section to download FFmpeg and that engine's files (only shown when something's missing, or via the **Runtime Downloads** button).
 2. Click **Input** and select a video. Its resolution, framerate, frame count, and duration will appear automatically.
 3. Click **Output Folder** and pick where the result should be saved.
 4. Choose an output **Format** (.mkv / .mp4 / .mov / .webm).
-5. Set **Multiplier** (2x/4x), **Scale**, **Encoder**, **Preset**, and **CQ** as needed.
+5. Set **Multiplier** (2x/4x), **Scale**, **Encoder**, **Preset**, and **CQ** as needed. Encoder options are automatically limited to what your detected GPU(s) support, plus software encoding.
 6. Click **START**. The output filename is generated automatically as `{input name} {new fps}fps.{format}`.
 
 ## Roadmap
 
-- [ ] RIFE-NCNN (Vulkan) support for AMD/Intel GPUs
-- [ ] Non-Nvidia encoder options (AMF, QSV, software encoders)
-- [ ] Additional interpolation models (DAIN, FLAVR)
-- [ ] UI for switching/re-downloading AI models after initial setup
-- [ ] Optional settings panel for advanced/runtime overrides
+### 🧠 Interpolation Engines
+- [x] RIFE CUDA
+- [x] RIFE NCNN/Vulkan
+
+### 🎞️ Video Encoders
+- [x] NVIDIA NVENC
+- [x] AMD AMF
+- [x] Intel QSV
+- [x] Software encoding fallback (SVT-AV1 / x265 / x264)
+
+### ⚙️ Runtime & Distribution
+- [x] Automatic runtime download
+- [x] Per-user LocalAppData runtime
+- [x] Hugging Face runtime mirrors
+- [x] Per-engine runtime downloads (only fetch what you use)
+- [ ] Runtime version management
+- [ ] Runtime integrity/hash verification
+- [ ] Automatic runtime updates
+
+### 🖥️ Application
+- [x] Video metadata detection
+- [x] Automatic output naming
+- [x] Temporary file cleanup
+- [x] GPU auto-detection
+- [x] Vendor-aware encoder/preset filtering
+- [ ] Batch processing
+- [ ] Progress estimation
+- [ ] Queue system
 
 ## Credits & Licenses
 
-FrameMeld is licensed under **GPL-3.0** (see [`LICENSE`](https://huggingface.co/Luxbane/FrameMeld/blob/main/LICENSE)), as it builds on GPL-3.0-licensed code from Flowframes.
+FrameMeld is licensed under **GPL-3.0** (see [`LICENSE`](https://github.com/Luxbane/FrameMeld?tab=GPL-3.0-1-ov-file)), as it builds on GPL-3.0-licensed code from Flowframes.
 
 See [`THIRD_PARTY_LICENSES.md`](./THIRD_PARTY_LICENSES.md) for full attribution, including:
 - **RIFE** (MIT) — [hzwer/Practical-RIFE](https://github.com/hzwer/Practical-RIFE)
+- **RIFE-NCNN-Vulkan** (MIT) — [nihui/rife-ncnn-vulkan](https://github.com/nihui/rife-ncnn-vulkan)
 - **Flowframes** (GPL-3.0) — [n00mkrad/flowframes](https://github.com/n00mkrad/flowframes)
 - **FFmpeg** (GPL/LGPL) — [BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds)
 - **7-Zip** (LGPL) — [7-zip.org](https://www.7-zip.org/)

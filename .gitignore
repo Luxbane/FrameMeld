@@ -4,8 +4,7 @@ build/
 .venv/
 work/
 config.json
-FrameForge.spec
+FrameMeld.spec
 __pycache__/
 *.pyc
 README.txt
-FrameMeld.spec

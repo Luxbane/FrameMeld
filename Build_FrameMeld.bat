@@ -1,8 +1,8 @@
 @echo off
 setlocal EnableExtensions
-title FrameMeld Builder v1.0
+title FrameMeld Builder v1.1
 echo ============================================
-echo FrameMeld Builder v1.0
+echo FrameMeld Builder v1.1
 echo ============================================
 where py >nul 2>&1
 if errorlevel 1 goto NOPYTHON
@@ -25,7 +25,6 @@ echo EXE: %CD%\dist\FrameMeld\FrameMeld.exe
 echo.
 echo Note: FrameMeld downloads its runtime (FFmpeg, Python, RIFE model)
 echo automatically on first launch, into %%LOCALAPPDATA%%\FrameMeld\runtime
-echo No Flowframes install or manual FFmpeg download is needed to build.
 echo.
 pause
 exit /b 0
