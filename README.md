@@ -41,7 +41,7 @@ FrameMeld reuses Flowframes' RIFE implementation (CUDA or NCNN/Vulkan) for inter
 
 RIFE interpolation and video encoding are heavy workloads — expect your CPU and/or GPU to run at or near full load for the entire process, with temperatures, fan noise, and power draw rising accordingly. This is expected, not a bug.
 
-**Recommended:** a gaming laptop or desktop with adequate cooling. Thin-and-light/ultrabook laptops (including recent ones like Core Ultra H-series with only an iGPU) are often thermally constrained by design and may hit sustained high temperatures or heavy throttling under this kind of load.
+**Recommended:** a gaming laptop or desktop with adequate cooling. Thin-and-light/ultrabook laptops (including recent ones with only an iGPU) are often thermally constrained by design and may hit sustained high temperatures or heavy throttling under this kind of load.
 
 Modern CPUs/GPUs throttle themselves automatically when they get too hot, so there's no realistic risk of hardware damage from heat alone. Still, if you want to keep temperatures in check during long jobs:
 
