@@ -9,6 +9,20 @@ FrameMeld reuses Flowframes' RIFE implementation (CUDA or NCNN/Vulkan) for inter
 
 > **NVIDIA, AMD, and Intel GPUs are all supported.** Pick RIFE CUDA (NVIDIA only, fastest) or RIFE NCNN (NVIDIA/AMD/Intel via Vulkan) for interpolation, and NVENC/AMF/QSV/software for encoding — independently of each other. FrameMeld auto-detects your GPU(s) and disables encoder options your hardware doesn't support.
 
+> ## ⚠️ Thermal warning — read before running long jobs
+>
+> RIFE interpolation and video encoding are sustained, heavy workloads — your CPU and/or GPU will run at or near full load for the entire job, and temperatures **will** climb accordingly. On thin/ultrabook laptops without serious cooling, we've seen CPU temps approach 100°C with no limit in place.
+>
+> **This is intended for gaming laptops and desktop PCs with adequate CPU/GPU cooling.** Running it on a thin-and-light laptop, an ultrabook, or any system without a real cooling solution is not recommended, and may result in heavy thermal throttling (slower performance) or, in poorly-ventilated systems, put unusual sustained stress on your hardware.
+>
+> **Before running long jobs, especially on a laptop:**
+> - If your laptop has vendor software with a thermal/power limit (e.g. Lenovo LOQ/Vantage, ASUS Armoury Crate, MSI Center), **set a max temperature or power limit** before starting.
+> - No vendor software available? Try **[MSI Afterburner](https://www.msi.com/Landing/afterburner/graphics-cards)** (works on any GPU brand) to cap GPU power limit, or **Control Panel → Power Options → Change advanced power settings → Processor power management → Maximum processor state** (built into Windows, works on any laptop) to cap CPU boost.
+> - Make sure the laptop's vents aren't blocked, and consider a cooling pad for long jobs.
+> - Modern CPUs/GPUs throttle themselves automatically before real damage occurs, so this is about performance and longevity, not an acute safety risk — but sustained near-100°C operation on hardware with inadequate cooling is not something we recommend making a habit of.
+>
+> **We are not responsible for thermal damage, reduced hardware lifespan, or any other consequences of running FrameMeld on hardware not suited for sustained heavy workloads.** Use appropriate cooling and power limits, especially on laptops. You've been warned — proceed at your own risk.
+
 ## Features
 
 - **Two interpolation engines**: RIFE CUDA (NVIDIA, fastest) and RIFE NCNN (NVIDIA/AMD/Intel via Vulkan), switchable from the main screen
@@ -23,7 +37,26 @@ FrameMeld reuses Flowframes' RIFE implementation (CUDA or NCNN/Vulkan) for inter
 - First-launch setup downloads only the runtime components you need (FFmpeg + your chosen interpolation engine) — no separate installs needed
 - Temporary working files are cleaned up automatically after a run finishes or is cancelled
 
+## ⚠️ Before you run this
+
+RIFE interpolation and video encoding are heavy workloads — expect your CPU and/or GPU to run at or near full load for the entire process, with temperatures, fan noise, and power draw rising accordingly. This is expected, not a bug.
+
+**Recommended:** a gaming laptop or desktop with adequate cooling. Thin-and-light/ultrabook laptops (including recent ones like Core Ultra H-series with only an iGPU) are often thermally constrained by design and may hit sustained high temperatures or heavy throttling under this kind of load.
+
+Modern CPUs/GPUs throttle themselves automatically when they get too hot, so there's no realistic risk of hardware damage from heat alone. Still, if you want to keep temperatures in check during long jobs:
+
+- **Windows Power Options** → Change advanced power settings → Processor power management → Maximum processor state — lower this (e.g. to 80–85%) to cap CPU boost. Usually accessible even on locked-down/business laptops.
+- **MSI Afterburner** (works on any GPU brand) — lower the Power Limit slider.
+- **`nvidia-smi -pl <watts>`** (NVIDIA only, no extra install needed) — sets a hard power cap.
+- Some laptops expose CPU power limits (PL1/PL2) in BIOS/UEFI directly.
+- Make sure vents aren't blocked, and consider a cooling pad on laptops.
+
+If your system doesn't offer any of the above (locked BIOS, no vendor software, etc.), monitor temperatures with something like HWMonitor and consider shorter jobs or lower multipliers/presets if things get uncomfortably hot.
+
+**This project is provided as-is.** FrameMeld doesn't do anything unusual to your hardware — it just runs FFmpeg and RIFE at full tilt like any other encoding/rendering software — but you're responsible for making sure your own system is adequately cooled for sustained heavy load. Use at your own risk.
+
 ## Requirements
+
 
 - **A GPU with hardware encode support** for your target codec:
   - NVIDIA: NVENC (AV1 NVENC needs RTX 40-series or newer; HEVC/H.264 NVENC go back further) — see [NVIDIA's encoder support matrix](https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new)
