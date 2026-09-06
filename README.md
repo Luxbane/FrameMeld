@@ -9,19 +9,16 @@ FrameMeld reuses Flowframes' RIFE implementation (CUDA or NCNN/Vulkan) for inter
 
 > **NVIDIA, AMD, and Intel GPUs are all supported.** Pick RIFE CUDA (NVIDIA only, fastest) or RIFE NCNN (NVIDIA/AMD/Intel via Vulkan) for interpolation, and NVENC/AMF/QSV/software for encoding — independently of each other. FrameMeld auto-detects your GPU(s) and disables encoder options your hardware doesn't support.
 
-> ## ⚠️ Thermal warning — read before running long jobs
->
-> RIFE interpolation and video encoding are sustained, heavy workloads — your CPU and/or GPU will run at or near full load for the entire job, and temperatures **will** climb accordingly. On thin/ultrabook laptops without serious cooling, we've seen CPU temps approach 100°C with no limit in place.
->
-> **This is intended for gaming laptops and desktop PCs with adequate CPU/GPU cooling.** Running it on a thin-and-light laptop, an ultrabook, or any system without a real cooling solution is not recommended, and may result in heavy thermal throttling (slower performance) or, in poorly-ventilated systems, put unusual sustained stress on your hardware.
->
-> **Before running long jobs, especially on a laptop:**
-> - If your laptop has vendor software with a thermal/power limit (e.g. Lenovo LOQ/Vantage, ASUS Armoury Crate, MSI Center), **set a max temperature or power limit** before starting.
-> - No vendor software available? Try **[MSI Afterburner](https://www.msi.com/Landing/afterburner/graphics-cards)** (works on any GPU brand) to cap GPU power limit, or **Control Panel → Power Options → Change advanced power settings → Processor power management → Maximum processor state** (built into Windows, works on any laptop) to cap CPU boost.
-> - Make sure the laptop's vents aren't blocked, and consider a cooling pad for long jobs.
-> - Modern CPUs/GPUs throttle themselves automatically before real damage occurs, so this is about performance and longevity, not an acute safety risk — but sustained near-100°C operation on hardware with inadequate cooling is not something we recommend making a habit of.
->
-> **We are not responsible for thermal damage, reduced hardware lifespan, or any other consequences of running FrameMeld on hardware not suited for sustained heavy workloads.** Use appropriate cooling and power limits, especially on laptops. You've been warned — proceed at your own risk.
+## ⚠️ Thermal warning — read before running long jobs
+RIFE interpolation and video encoding are sustained, heavy workloads — your CPU and/or GPU will run at or near full load for the entire job, and temperatures **will** climb accordingly. On thin/ultrabook laptops without serious cooling, we've seen CPU temps approach 100°C with no limit in place.
+**This is intended for gaming laptops and desktop PCs with adequate CPU/GPU cooling.** Running it on a thin-and-light laptop, an ultrabook, or any system without a real cooling solution is not recommended, and may result in heavy thermal throttling (slower performance) or, in poorly-ventilated systems, put unusual sustained stress on your hardware.
+**Before running long jobs, especially on a laptop:**
+- If your laptop has vendor software with a thermal/power limit (e.g. Lenovo LOQ/Vantage, ASUS Armoury Crate, MSI Center), **set a max temperature or power limit** before starting.
+- No vendor software available? Try **[MSI Afterburner](https://www.msi.com/Landing/afterburner/graphics-cards)** (works on any GPU brand) to cap GPU power limit, or **Control Panel → Power Options → Change advanced power settings → Processor power management → Maximum processor state** (built into Windows, works on any laptop) to cap CPU boost.
+- Make sure the laptop's vents aren't blocked, and consider a cooling pad for long jobs.
+- Modern CPUs/GPUs throttle themselves automatically before real damage occurs, so this is about performance and longevity, not an acute safety risk — but sustained near-100°C operation on hardware with inadequate cooling is not something we recommend making a habit of.
+
+**We are not responsible for thermal damage, reduced hardware lifespan, or any other consequences of running FrameMeld on hardware not suited for sustained heavy workloads.** Use appropriate cooling and power limits, especially on laptops. You've been warned — proceed at your own risk.
 
 ## Features
 
