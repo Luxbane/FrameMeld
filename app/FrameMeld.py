@@ -183,7 +183,7 @@ class DownloadJob(QThread):
 
 class Main(QMainWindow):
     def __init__(self):
-        super().__init__();self.c=load();self.job=None;self.show_setup=False;self.setWindowTitle("FrameMeld v1.2");self.resize(900,700);self.ui();self.update_model_desc();self.refresh_setup();self.refresh_preset();self.refresh_encoders()
+        super().__init__();self.c=load();self.job=None;self.show_setup=False;self.setWindowTitle("FrameMeld v1.2");self.resize(900,700);self.ui();self.update_model_desc();self.refresh_setup();self.refresh_preset();self.refresh_encoders();self.restore_settings();self.connect_autosave()
     def pick(self,e,folder=False,filt="All files (*)"):
         p=QFileDialog.getExistingDirectory(self) if folder else QFileDialog.getOpenFileName(self,"Select","",filt)[0]
         if p:e.setText(p)
@@ -207,6 +207,27 @@ class Main(QMainWindow):
         self.preset.blockSignals(True)
         self.preset.clear();self.preset.addItems(PRESETS[grp])
         self.preset.blockSignals(False)
+    def save_settings(self):
+        engine=self.modelpick.currentData();enc=self.encoder.currentData()
+        if engine is not None:self.c["engine"]=engine
+        if enc is not None:self.c["encoder"]=enc
+        if self.preset.currentText():self.c["preset"]=self.preset.currentText()
+        self.c["cq"]=self.cq.value()
+        save(self.c)
+    def restore_settings(self):
+        if not CFG.exists():return
+        i=self.modelpick.findData(self.c.get("engine"))
+        if i>=0 and self.modelpick.model().item(i).isEnabled():self.modelpick.setCurrentIndex(i)
+        j=self.encoder.findData(self.c.get("encoder"))
+        if j>=0 and self.encoder.model().item(j).isEnabled():self.encoder.setCurrentIndex(j)
+        self.refresh_preset()
+        saved=self.c.get("preset")
+        if saved in [self.preset.itemText(k) for k in range(self.preset.count())]:self.preset.setCurrentText(saved)
+        self.cq.setValue(int(self.c.get("cq",self.cq.value())))
+        self.refresh_setup()
+    def connect_autosave(self):
+        for sig in (self.modelpick.currentIndexChanged,self.encoder.currentIndexChanged,self.preset.currentIndexChanged,self.cq.valueChanged):
+            sig.connect(self.save_settings)
     def toggle_setup(self):
         self.show_setup=not self.show_setup
         self.refresh_setup()
