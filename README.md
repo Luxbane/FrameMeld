@@ -151,9 +151,6 @@ README.md, LICENSE, THIRD_PARTY_LICENSES.md
 - [x] Per-user LocalAppData runtime
 - [x] Hugging Face runtime mirrors
 - [x] Per-engine runtime downloads (only fetch what you use)
-- [ ] Runtime version management
-- [ ] Runtime integrity/hash verification
-- [ ] Automatic runtime updates
 
 ### 🖥️ Application
 - [x] Video metadata detection
@@ -163,9 +160,6 @@ README.md, LICENSE, THIRD_PARTY_LICENSES.md
 - [x] Vendor-aware encoder/preset filtering
 - [x] Vendor-aware engine filtering (RIFE CUDA disabled without NVIDIA)
 - [x] Hardware-accelerated frame extraction
-- [ ] Batch processing
-- [ ] Progress estimation
-- [ ] Queue system
 
 ## Credits & Licenses
 
