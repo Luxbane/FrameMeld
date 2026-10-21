@@ -79,7 +79,7 @@ If your system doesn't offer any of the above (locked BIOS, no vendor software, 
 
 ### 🟦 GitHub Releases
 
-**[⬇️ Download the latest FrameMeld release](https://github.com/Luxbane/FrameMeld/releases/latest)**
+**[⬇️ Download the latest FrameMeld free version release](https://github.com/Luxbane/FrameMeld/releases/latest)**
 
 Download the latest Windows build directly from GitHub Releases.
 
