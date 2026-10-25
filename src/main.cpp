@@ -490,7 +490,7 @@ void parse_job_progress(const std::string& line) {
 }
 
 // Spawn process with stdout/stderr redirection
-int run_process_capture(const std::wstring& cmd, const fs::path& workDir, std::string& outAll, bool filterLog, bool logToWindow = true) {
+int run_process_capture(const std::wstring& cmd, const fs::path& workDir, std::string& outAll, bool filterLog, bool logToWindow = true, DWORD extraFlags = 0) {
     HANDLE hRead = NULL, hWrite = NULL;
     SECURITY_ATTRIBUTES sa{};
     sa.nLength = sizeof(sa);
@@ -512,7 +512,7 @@ int run_process_capture(const std::wstring& cmd, const fs::path& workDir, std::s
     std::wstring dirStr = workDir.empty() ? L"" : workDir.wstring();
     LPCWSTR lpDir = dirStr.empty() ? NULL : dirStr.c_str();
     
-    BOOL created = CreateProcessW(NULL, cmdBuf.data(), NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, lpDir, &si, &pi);
+    BOOL created = CreateProcessW(NULL, cmdBuf.data(), NULL, NULL, TRUE, CREATE_NO_WINDOW | extraFlags, NULL, lpDir, &si, &pi);
     CloseHandle(hWrite);
     
     if (!created) {
@@ -695,16 +695,22 @@ void job_thread(std::wstring inputPath, std::wstring outPath, int mult, double s
         log_text(L"Extracting frames...");
         std::wstring hwaccel = (g_app.gpuVendors.count("NVIDIA") > 0) ? L"cuda" : L"d3d11va";
         
-        std::wstring extractCmd = L"\"" + ffmpegExe.wstring() + L"\" -y -hwaccel " + hwaccel +
+        std::wstring extractCmd = L"\"" + ffmpegExe.wstring() + L"\" -y -threads 2 -hwaccel " + hwaccel +
             L" -i \"" + inputPath + L"\" -fps_mode passthrough -compression_level 1 \"" +
             (srcDir / L"%08d.png").wstring() + L"\"";
             
         std::string dummyOut;
-        int code = run_process_capture(extractCmd, g_app.rootPath, dummyOut, true);
+        int code = run_process_capture(extractCmd, g_app.rootPath, dummyOut, true, true, BELOW_NORMAL_PRIORITY_CLASS);
         if (code != 0 || g_app.jobCancelled) throw std::runtime_error("FFmpeg extraction failed.");
         
         fs::path finalDst = dstDir;
         PostMessage(g_app.hWnd, WM_APP_JOB_PROGRESS, 5, (LPARAM)new std::wstring(L"Interpolating: 0%"));
+
+        std::wstring ncnnThreads = L"1:2:1";
+        if (g_app.gpuVendors.count("Intel") > 0 || (g_app.gpuVendors.count("NVIDIA") == 0 && g_app.gpuVendors.count("AMD") == 0)) {
+            ncnnThreads = L"1:1:1";
+        }
+
         if (engine == "rife-cuda") {
             log_text(L"Running RIFE CUDA...");
             std::wstringstream rcmd;
@@ -717,8 +723,9 @@ void job_thread(std::wstring inputPath, std::wstring outPath, int mult, double s
         } else {
             log_text(L"Running RIFE NCNN...");
             std::wstring ncmd = L"\"" + ncnnExe.wstring() + L"\" -i \"" + srcDir.wstring() +
-                L"\" -o \"" + dstDir.wstring() + L"\" -m \"" + ncnnModel.wstring() + L"\"";
-            code = run_process_capture(ncmd, ncnnExe.parent_path(), dummyOut, true);
+                L"\" -o \"" + dstDir.wstring() + L"\" -m \"" + ncnnModel.wstring() +
+                L"\" -j " + ncnnThreads;
+            code = run_process_capture(ncmd, ncnnExe.parent_path(), dummyOut, true, true, BELOW_NORMAL_PRIORITY_CLASS);
             if (code != 0 || g_app.jobCancelled) throw std::runtime_error("RIFE NCNN failed. See log.");
             
             if (mult == 4) {
@@ -726,8 +733,9 @@ void job_thread(std::wstring inputPath, std::wstring outPath, int mult, double s
                 fs::create_directories(pass2);
                 log_text(L"Running RIFE NCNN (2nd pass for 4x)...");
                 std::wstring ncmd2 = L"\"" + ncnnExe.wstring() + L"\" -i \"" + dstDir.wstring() +
-                    L"\" -o \"" + pass2.wstring() + L"\" -m \"" + ncnnModel.wstring() + L"\"";
-                code = run_process_capture(ncmd2, ncnnExe.parent_path(), dummyOut, true);
+                    L"\" -o \"" + pass2.wstring() + L"\" -m \"" + ncnnModel.wstring() +
+                    L"\" -j " + ncnnThreads;
+                code = run_process_capture(ncmd2, ncnnExe.parent_path(), dummyOut, true, true, BELOW_NORMAL_PRIORITY_CLASS);
                 if (code != 0 || g_app.jobCancelled) throw std::runtime_error("RIFE NCNN 2nd pass failed. See log.");
                 finalDst = pass2;
             }
