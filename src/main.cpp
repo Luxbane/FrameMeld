@@ -29,6 +29,7 @@
 #include <filesystem>
 #include <algorithm>
 #include <cmath>
+#include <chrono>
 
 namespace fs = std::filesystem;
 
@@ -68,6 +69,7 @@ enum ControlID {
     ID_PROGRESS_BAR,
     ID_LBL_JOB_PROGRESS,
     ID_EDT_LOG,
+    ID_TIMER_JOB_ELAPSED,
 
     // Custom messages
     WM_APP_LOG = WM_APP + 1,
@@ -187,6 +189,8 @@ struct AppState {
     HBRUSH hDarkEditBrush = NULL;
     HBRUSH hDarkLogBrush = NULL;
     double srcFps = 0.0;
+    int srcWidth = 0;
+    int srcHeight = 0;
     long long totalSrcFrames = 0;
     long long totalTargetFrames = 0;
     int lastValidEngineIdx = 0;
@@ -197,6 +201,8 @@ struct AppState {
     std::atomic<bool> jobCancelled{false};
     PROCESS_INFORMATION activeProcess{};
     std::mutex procMutex;
+    std::chrono::steady_clock::time_point jobStartTime;
+    std::wstring currentJobStage = L"Starting...";
     
     std::atomic<bool> dlRunning{false};
 };
@@ -599,7 +605,22 @@ int run_process_capture(const std::wstring& cmd, const fs::path& workDir, std::s
     return static_cast<int>(exitCode);
 }
 
+static std::wstring format_elapsed_time(long long sec) {
+    long long m = sec / 60;
+    long long s = sec % 60;
+    wchar_t buf[32];
+    if (m >= 60) {
+        long long h = m / 60;
+        m = m % 60;
+        swprintf_s(buf, L"%02lld:%02lld:%02lld", h, m, s);
+    } else {
+        swprintf_s(buf, L"%02lld:%02lld", m, s);
+    }
+    return std::wstring(buf);
+}
+
 void cancel_job() {
+    KillTimer(g_app.hWnd, ID_TIMER_JOB_ELAPSED);
     g_app.jobCancelled = true;
     std::lock_guard<std::mutex> lock(g_app.procMutex);
     if (g_app.activeProcess.hProcess != NULL) {
@@ -670,7 +691,7 @@ void start_download(const std::string& key) {
 }
 
 // Background Job Worker
-void job_thread(std::wstring inputPath, std::wstring outPath, int mult, double scale) {
+void job_thread(std::wstring inputPath, std::wstring outPath, int mult, double scale, int origW = 0, int origH = 0) {
     g_app.jobRunning = true;
     g_app.jobCancelled = false;
     
@@ -722,8 +743,24 @@ void job_thread(std::wstring inputPath, std::wstring outPath, int mult, double s
         log_text(L"Extracting frames...");
         std::wstring hwaccel = (g_app.gpuVendors.count("NVIDIA") > 0) ? L"cuda" : L"d3d11va";
         
+        std::wstring scaleExtractFilter = L"";
+        std::wstring scaleEncodeFilter = L"";
+        if (engine.find("ncnn") != std::string::npos && (scale < 0.99 || scale > 1.01)) {
+            std::wstringstream ssExt;
+            ssExt << L" -vf \"scale=trunc(iw*" << scale << L"/2)*2:trunc(ih*" << scale << L"/2)*2\"";
+            scaleExtractFilter = ssExt.str();
+            
+            std::wstringstream ssEnc;
+            if (origW > 0 && origH > 0) {
+                ssEnc << L" -vf \"scale=" << origW << L":" << origH << L":flags=bicubic\"";
+            } else {
+                ssEnc << L" -vf \"scale=trunc(iw/" << scale << L"/2)*2:trunc(ih/" << scale << L"/2)*2:flags=bicubic\"";
+            }
+            scaleEncodeFilter = ssEnc.str();
+        }
+
         std::wstring extractCmd = L"\"" + ffmpegExe.wstring() + L"\" -y -threads 2 -hwaccel " + hwaccel +
-            L" -i \"" + inputPath + L"\" -fps_mode passthrough -compression_level 1 \"" +
+            L" -i \"" + inputPath + L"\"" + scaleExtractFilter + L" -fps_mode passthrough -compression_level 1 \"" +
             (srcDir / L"%08d.png").wstring() + L"\"";
             
         std::string dummyOut;
@@ -792,7 +829,8 @@ void job_thread(std::wstring inputPath, std::wstring outPath, int mult, double s
         if (cq.empty()) cq = "28";
         
         std::wstring encodeCmd = L"\"" + ffmpegExe.wstring() + L"\" -y -framerate 60 -i \"" +
-            pattern + L"\" -i \"" + inputPath + L"\" -map 0:v:0 -map 1:a? -c:v " + s2ws(enc) +
+            pattern + L"\" -i \"" + inputPath + L"\" -map 0:v:0 -map 1:a?" + scaleEncodeFilter +
+            L" -c:v " + s2ws(enc) +
             L" -preset " + s2ws(preset) + L" " + qflag + L" " + s2ws(cq) +
             L" -pix_fmt yuv420p -c:a copy \"" + outPath + L"\"";
             
@@ -889,14 +927,17 @@ void start_job() {
     fs::path outFilePath = fs::path(outDirBuf) / (stem + L" " + std::to_wstring(fps) + L" fps" + fmtBuf);
     
     g_app.totalTargetFrames = (g_app.totalSrcFrames > 0 ? g_app.totalSrcFrames : 100) * mult;
+    g_app.jobStartTime = std::chrono::steady_clock::now();
+    g_app.currentJobStage = L"Starting...";
     SendMessageW(g_app.hProgressBar, PBM_SETPOS, 0, 0);
-    SetWindowTextW(g_app.hLblJobProgress, L"Starting...");
+    SetWindowTextW(g_app.hLblJobProgress, L"Starting... [00:00]");
+    SetTimer(g_app.hWnd, ID_TIMER_JOB_ELAPSED, 1000, NULL);
 
     EnableWindow(g_app.hBtnStart, FALSE);
     EnableWindow(g_app.hBtnCancel, TRUE);
     SetWindowTextW(g_app.hEdtLog, L"");
     
-    std::thread(job_thread, inPath.wstring(), outFilePath.wstring(), mult, scale).detach();
+    std::thread(job_thread, inPath.wstring(), outFilePath.wstring(), mult, scale, g_app.srcWidth, g_app.srcHeight).detach();
 }
 
 // Handle selection of input video file (via dialog, paste, or drag-and-drop)
@@ -996,6 +1037,8 @@ void probe_input() {
         if (frames == 0 && dur > 0 && fps > 0) frames = static_cast<long long>(dur * fps);
         
         g_app.srcFps = fps;
+        g_app.srcWidth = width;
+        g_app.srcHeight = height;
         g_app.totalSrcFrames = frames;
         int h = static_cast<int>(dur / 3600);
         int m = static_cast<int>(std::fmod(dur, 3600.0) / 60);
@@ -1082,8 +1125,8 @@ void update_layout(bool showSetup) {
         moveCtrl(g_app.hBtnStart, 20, 473, 420, 34);
         moveCtrl(g_app.hBtnCancel, 450, 473, 420, 34);
         
-        moveCtrl(g_app.hProgressBar, 20, 515, 710, 18);
-        moveCtrl(g_app.hLblJobProgress, 740, 514, 130, 20);
+        moveCtrl(g_app.hProgressBar, 20, 515, 630, 18);
+        moveCtrl(g_app.hLblJobProgress, 660, 514, 210, 20);
         
         int logHeight = showSetup ? 156 : (156 + 142);
         moveCtrl(g_app.hEdtLog, 20, 539, 850, logHeight);
@@ -1546,13 +1589,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         // Progress Bar & Status
         g_app.hProgressBar = CreateWindowExW(0, PROGRESS_CLASS, NULL,
             WS_VISIBLE | WS_CHILD | PBS_SMOOTH,
-            20, 515, 710, 18, hWnd, (HMENU)ID_PROGRESS_BAR, g_app.hInstance, NULL);
+            20, 515, 630, 18, hWnd, (HMENU)ID_PROGRESS_BAR, g_app.hInstance, NULL);
         SendMessageW(g_app.hProgressBar, PBM_SETRANGE32, 0, 100);
         SendMessageW(g_app.hProgressBar, PBM_SETPOS, 0, 0);
         
         g_app.hLblJobProgress = CreateWindowW(L"STATIC", L"Ready",
             WS_VISIBLE | WS_CHILD | SS_RIGHT,
-            740, 514, 130, 20, hWnd, (HMENU)ID_LBL_JOB_PROGRESS, g_app.hInstance, NULL);
+            660, 514, 210, 20, hWnd, (HMENU)ID_LBL_JOB_PROGRESS, g_app.hInstance, NULL);
 
         // Log box
         g_app.hEdtLog = CreateWindowW(L"EDIT", L"", WS_VISIBLE | WS_CHILD | WS_BORDER | ES_MULTILINE | ES_READONLY | WS_VSCROLL | ES_AUTOVSCROLL,
@@ -1739,32 +1782,57 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         break;
     }
     
+    case WM_TIMER: {
+        if (wParam == ID_TIMER_JOB_ELAPSED) {
+            if (g_app.jobRunning) {
+                auto now = std::chrono::steady_clock::now();
+                long long elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - g_app.jobStartTime).count();
+                std::wstring text = g_app.currentJobStage + L" [" + format_elapsed_time(elapsed) + L"]";
+                SetWindowTextW(g_app.hLblJobProgress, text.c_str());
+            }
+        }
+        break;
+    }
+    
     case WM_APP_JOB_PROGRESS: {
         int pct = (int)wParam;
         std::wstring* st = (std::wstring*)lParam;
         SendMessageW(g_app.hProgressBar, PBM_SETPOS, pct, 0);
         if (st) {
-            SetWindowTextW(g_app.hLblJobProgress, st->c_str());
+            g_app.currentJobStage = *st;
+            auto now = std::chrono::steady_clock::now();
+            long long elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - g_app.jobStartTime).count();
+            std::wstring text = g_app.currentJobStage + L" [" + format_elapsed_time(elapsed) + L"]";
+            SetWindowTextW(g_app.hLblJobProgress, text.c_str());
             delete st;
         }
         break;
     }
     
     case WM_APP_JOB_DONE: {
+        KillTimer(hWnd, ID_TIMER_JOB_ELAPSED);
         int success = (int)wParam;
         std::wstring* msg = (std::wstring*)lParam;
         EnableWindow(g_app.hBtnStart, TRUE);
         EnableWindow(g_app.hBtnCancel, FALSE);
+        
+        auto now = std::chrono::steady_clock::now();
+        long long elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - g_app.jobStartTime).count();
+        std::wstring durStr = format_elapsed_time(elapsed);
+        
         if (success) {
             SendMessageW(g_app.hProgressBar, PBM_SETPOS, 100, 0);
-            SetWindowTextW(g_app.hLblJobProgress, L"100% (Done)");
+            SetWindowTextW(g_app.hLblJobProgress, (L"Done in " + durStr).c_str());
+            log_text(L"Job completed in " + durStr + L".");
         } else {
             SendMessageW(g_app.hProgressBar, PBM_SETPOS, 0, 0);
             SetWindowTextW(g_app.hLblJobProgress, L"Stopped");
+            log_text(L"Job stopped after " + durStr + L".");
         }
         if (msg) {
             if (success) {
-                MessageBoxW(hWnd, (L"Done:\n" + *msg).c_str(), L"FrameMeld", MB_ICONINFORMATION);
+                std::wstring doneMsg = L"Completed in " + durStr + L"!\n\nOutput saved to:\n" + *msg;
+                MessageBoxW(hWnd, doneMsg.c_str(), L"FrameMeld", MB_ICONINFORMATION);
             } else {
                 MessageBoxW(hWnd, (L"Failed:\n" + *msg).c_str(), L"FrameMeld", MB_ICONERROR);
             }
