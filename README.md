@@ -1,5 +1,5 @@
 ---
-license: gpl-3.0
+license: mit
 ---
 # FrameMeld
 
@@ -172,10 +172,10 @@ README.md, LICENSE, THIRD_PARTY_LICENSES.md
 
 ## Credits & Licenses
 
-FrameMeld is open-source software licensed under **GPL-3.0** (see [`LICENSE`](./LICENSE)).
+FrameMeld is open-source software licensed under the **MIT License** (see [`LICENSE`](./LICENSE)).
 
-- GUI FrameMeld C++: Luxbane (GPL-3.0)
-- **RIFE CUDA Wrapper**: Adapted from [Flowframes](https://github.com/n00mkrad/flowframes) by n00mkrad (GPL-3.0)
+- GUI FrameMeld C++: Luxbane (MIT)
+- **RIFE CUDA**: [Practical-RIFE](https://github.com/hzwer/Practical-RIFE) by Zhewei Huang (MIT)
 - **RIFE Model & Core Architecture**: [hzwer/Practical-RIFE](https://github.com/hzwer/Practical-RIFE) by Zhewei Huang (MIT)
 - **RIFE NCNN Vulkan**: [nihui/rife-ncnn-vulkan](https://github.com/nihui/rife-ncnn-vulkan) by nihui (MIT)
 - **FFmpeg**: [FFmpeg Developers](https://ffmpeg.org/) / [BtbN Builds](https://github.com/BtbN/FFmpeg-Builds) (GPL-3.0)
@@ -184,4 +184,7 @@ FrameMeld is open-source software licensed under **GPL-3.0** (see [`LICENSE`](./
 
 See [`THIRD_PARTY_LICENSES.md`](./THIRD_PARTY_LICENSES.md) for full third-party notices and license texts.
 
-This project is not affiliated with or endorsed by Flowframes, RIFE's authors, FFmpeg, or 7-Zip.
+## Acknowledgements
+- Special thanks to [Flowframes](https://github.com/n00mkrad/flowframes) by n00mkrad for inspiration.
+
+This project is not affiliated with or endorsed by Practical-RIFE, Tencent NCNN, FFmpeg, or 7-Zip.

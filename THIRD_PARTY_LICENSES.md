@@ -1,6 +1,6 @@
 # Third-Party Licenses & Attributions
 
-FrameMeld is open-source software licensed under the **GNU General Public License v3.0** (see [`LICENSE`](./LICENSE)).
+FrameMeld is open-source software licensed under the **MIT License** (see [`LICENSE`](./LICENSE)).
 
 This document details the copyright notices, upstream sources, and licenses for the third-party components, runtimes, models, and tools used by or distributed alongside FrameMeld.
 
@@ -8,17 +8,16 @@ This document details the copyright notices, upstream sources, and licenses for 
 
 ## 1. FrameMeld Native GUI
 - **Author**: Luxbane
-- **License**: GNU General Public License v3.0 (GPL-3.0)
+- **License**: MIT License
 - **Description**: Standalone C++17 Win32 graphical user interface, process pipeline manager, and hardware capability detector.
 
 ---
 
 ## 2. RIFE CUDA Wrapper (`rife.py`)
-- **Upstream Project**: [Flowframes](https://github.com/n00mkrad/flowframes)
-- **Author**: n00mkrad
-- **License**: GNU General Public License v3.0 (GPL-3.0)
-- **Description**: Python CLI wrapper interface for RIFE CUDA frame interpolation. FrameMeld adapts this script (including custom IPC / direct streaming pipe implementations) to drive RIFE AI frame interpolation on NVIDIA CUDA hardware.
-- **Full Text**: See the `LICENSE` file in this repository for the GNU General Public License v3.0 text.
+- **Upstream Project**: [Practical-RIFE](https://github.com/hzwer/Practical-RIFE)
+- **Author**: Zhewei Huang (hzwer) / Luxbane
+- **License**: MIT License
+- **Description**: Python CLI wrapper and interpolation pipeline driving RIFE AI models on NVIDIA CUDA hardware. Built upon Practical-RIFE's inference architecture with custom Windows path encoding, multithreaded frame generation queues, and real-time IPC progress reporting.
 
 ---
 
@@ -109,5 +108,10 @@ SOFTWARE.
 
 ---
 
+## Acknowledgements
+- [Flowframes](https://github.com/n00mkrad/flowframes) by n00mkrad for workflow and UI inspiration.
+
+---
+
 ## Disclaimer
-FrameMeld is an independent project and is not affiliated with, endorsed by, or sponsored by Flowframes, Practical-RIFE, Tencent NCNN, FFmpeg, or 7-Zip.
+FrameMeld is an independent project and is not affiliated with, endorsed by, or sponsored by Practical-RIFE, Tencent NCNN, FFmpeg, 7-Zip, or Flowframes.

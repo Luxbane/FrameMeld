@@ -1,8 +1,8 @@
 @echo off
 setlocal EnableExtensions
-title FrameMeld v1.3.1 C++ Builder
+title FrameMeld v1.4.1 C++ Builder
 echo ============================================
-echo FrameMeld v1.3.1 C++ Builder (MinGW g++)
+echo FrameMeld v1.4.1 C++ Builder (MinGW g++)
 echo ============================================
 
 where g++ >nul 2>&1

@@ -450,6 +450,33 @@ void parse_job_progress(const std::string& line) {
         }
     }
     
+    // Check NCNN RIFE verbose output: ... -> .../00000012.jpg done
+    size_t donePos = line.rfind(" done");
+    if (donePos != std::string::npos) {
+        size_t arrowPos = line.rfind("-> ");
+        if (arrowPos != std::string::npos && arrowPos < donePos) {
+            std::string outPathStr = line.substr(arrowPos + 3, donePos - (arrowPos + 3));
+            size_t dotPos = outPathStr.rfind('.');
+            if (dotPos != std::string::npos) {
+                size_t numStart = dotPos;
+                while (numStart > 0 && isdigit((unsigned char)outPathStr[numStart - 1])) {
+                    numStart--;
+                }
+                long long curFrame = 0;
+                try { curFrame = std::stoll(outPathStr.substr(numStart, dotPos - numStart)); } catch (...) {}
+                if (curFrame > 0 && g_app.totalTargetFrames > 0) {
+                    double ratio = (double)curFrame / (double)g_app.totalTargetFrames;
+                    if (ratio > 1.0) ratio = 1.0;
+                    int pct = 5 + static_cast<int>(ratio * 85.0);
+                    int displayPct = static_cast<int>(ratio * 100.0);
+                    std::wstring* st = new std::wstring(L"Interpolating: " + std::to_wstring(displayPct) + L"%");
+                    PostMessage(g_app.hWnd, WM_APP_JOB_PROGRESS, pct, (LPARAM)st);
+                    return;
+                }
+            }
+        }
+    }
+    
     // Check NCNN RIFE percentage
     size_t pctPos = line.find('%');
     if (pctPos != std::string::npos && line.find("=>") == std::string::npos && line.find("fps=") == std::string::npos) {
@@ -722,7 +749,7 @@ void job_thread(std::wstring inputPath, std::wstring outPath, int mult, double s
             if (code != 0 || g_app.jobCancelled) throw std::runtime_error("RIFE failed. See log.");
         } else {
             log_text(L"Running RIFE NCNN...");
-            std::wstring ncmd = L"\"" + ncnnExe.wstring() + L"\" -i \"" + srcDir.wstring() +
+            std::wstring ncmd = L"\"" + ncnnExe.wstring() + L"\" -v -i \"" + srcDir.wstring() +
                 L"\" -o \"" + dstDir.wstring() + L"\" -m \"" + ncnnModel.wstring() +
                 L"\" -j " + ncnnThreads;
             code = run_process_capture(ncmd, ncnnExe.parent_path(), dummyOut, true, true, BELOW_NORMAL_PRIORITY_CLASS);
@@ -732,7 +759,7 @@ void job_thread(std::wstring inputPath, std::wstring outPath, int mult, double s
                 fs::path pass2 = workDir / "rife_output_pass2";
                 fs::create_directories(pass2);
                 log_text(L"Running RIFE NCNN (2nd pass for 4x)...");
-                std::wstring ncmd2 = L"\"" + ncnnExe.wstring() + L"\" -i \"" + dstDir.wstring() +
+                std::wstring ncmd2 = L"\"" + ncnnExe.wstring() + L"\" -v -i \"" + dstDir.wstring() +
                     L"\" -o \"" + pass2.wstring() + L"\" -m \"" + ncnnModel.wstring() +
                     L"\" -j " + ncnnThreads;
                 code = run_process_capture(ncmd2, ncnnExe.parent_path(), dummyOut, true, true, BELOW_NORMAL_PRIORITY_CLASS);
@@ -1887,7 +1914,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     int x = (screenW - w) / 2;
     int y = (screenH - h) / 2;
     
-    g_app.hWnd = CreateWindowExW(0, L"FrameMeldMainWindow", L"FrameMeld v1.3.1",
+    g_app.hWnd = CreateWindowExW(0, L"FrameMeldMainWindow", L"FrameMeld v1.4.1",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
         x, y, w, h, NULL, NULL, hInstance, NULL);
         
