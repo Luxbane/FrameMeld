@@ -24,6 +24,17 @@ if exist "src\manifest.xml" (
 if exist "src\app.ico" (
     copy /y "src\app.ico" "dist\FrameMeld\app.ico" >nul
 )
+if exist "LICENSE" (
+    copy /y "LICENSE" "dist\FrameMeld\LICENSE" >nul
+)
+if exist "THIRD_PARTY_LICENSES.md" (
+    copy /y "THIRD_PARTY_LICENSES.md" "dist\FrameMeld\THIRD_PARTY_LICENSES.md" >nul
+) else if exist "Third party licenses.md" (
+    copy /y "Third party licenses.md" "dist\FrameMeld\THIRD_PARTY_LICENSES.md" >nul
+)
+if exist "README.md" (
+    copy /y "README.md" "dist\FrameMeld\README.md" >nul
+)
 
 echo Compiling resources (icon and manifest)...
 windres -i "src\resource.rc" -o "src\resource.o"

@@ -5,7 +5,7 @@ license: gpl-3.0
 
 RIFE video frame interpolation with hardware-accelerated encoding (AV1 / HEVC / H.264), wrapped in a simple desktop GUI.
 
-FrameMeld reuses Flowframes' RIFE implementation (CUDA or NCNN/Vulkan) for interpolation, then encodes the result straight to AV1/HEVC/H.264 using your GPU's hardware encoder via FFmpeg — no manual frame extraction, no juggling separate tools.
+FrameMeld integrates RIFE AI frame interpolation (CUDA & NCNN/Vulkan) with GPU hardware-accelerated video encoding (AV1 / HEVC / H.264 via FFmpeg) in a lightweight, native desktop GUI — no manual frame extraction, no terminal juggling.
 
 > **NVIDIA, AMD, and Intel GPUs are all supported.** Pick RIFE CUDA (NVIDIA only, fastest) or RIFE NCNN (NVIDIA/AMD/Intel via Vulkan) for interpolation, and NVENC/AMF/QSV/software for encoding — independently of each other. FrameMeld auto-detects your GPU(s) and disables encoder options your hardware doesn't support.
 
@@ -129,7 +129,7 @@ src/main.cpp           native C++ Win32 source code
 src/manifest.xml       Windows Common Controls v6 & DPI manifest
 tools/7za.exe          bundled archive tool (used to extract the downloaded runtime)
 Build_FrameMeld.bat    C++ build script (g++)
-README.md, LICENSE, Third party licenses.md
+README.md, LICENSE, THIRD_PARTY_LICENSES.md
 ```
 
 `dist/`, `build/`, and `.venv/` are generated locally when you build and are not committed — excluded via `.gitignore`. `%LOCALAPPDATA%\FrameMeld\runtime` (the downloaded FFmpeg/RIFE engine files) lives outside the repo entirely, on the end user's machine.
@@ -172,13 +172,16 @@ README.md, LICENSE, Third party licenses.md
 
 ## Credits & Licenses
 
-FrameMeld is licensed under **GPL-3.0** (see [`LICENSE`](https://github.com/Luxbane/FrameMeld?tab=GPL-3.0-1-ov-file)), as it builds on GPL-3.0-licensed code from Flowframes.
+FrameMeld is open-source software licensed under **GPL-3.0** (see [`LICENSE`](./LICENSE)).
 
-See [`THIRD_PARTY_LICENSES.md`](./THIRD_PARTY_LICENSES.md) for full attribution, including:
-- **RIFE** (MIT) — [hzwer/Practical-RIFE](https://github.com/hzwer/Practical-RIFE)
-- **RIFE-NCNN-Vulkan** (MIT) — [nihui/rife-ncnn-vulkan](https://github.com/nihui/rife-ncnn-vulkan)
-- **Flowframes** (GPL-3.0) — [n00mkrad/flowframes](https://github.com/n00mkrad/flowframes)
-- **FFmpeg** (GPL/LGPL) — [BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds)
-- **7-Zip** (LGPL) — [7-zip.org](https://www.7-zip.org/)
+- GUI FrameMeld C++: Luxbane (GPL-3.0)
+- **RIFE CUDA Wrapper**: Adapted from [Flowframes](https://github.com/n00mkrad/flowframes) by n00mkrad (GPL-3.0)
+- **RIFE Model & Core Architecture**: [hzwer/Practical-RIFE](https://github.com/hzwer/Practical-RIFE) by Zhewei Huang (MIT)
+- **RIFE NCNN Vulkan**: [nihui/rife-ncnn-vulkan](https://github.com/nihui/rife-ncnn-vulkan) by nihui (MIT)
+- **FFmpeg**: [FFmpeg Developers](https://ffmpeg.org/) / [BtbN Builds](https://github.com/BtbN/FFmpeg-Builds) (GPL-3.0)
+- **7-Zip / 7za.exe**: [Igor Pavlov](https://www.7-zip.org/) (LGPL-2.1-or-later)
+
+
+See [`THIRD_PARTY_LICENSES.md`](./THIRD_PARTY_LICENSES.md) for full third-party notices and license texts.
 
 This project is not affiliated with or endorsed by Flowframes, RIFE's authors, FFmpeg, or 7-Zip.
