@@ -57,6 +57,7 @@ enum ControlID {
     // Engine & Encoder group
     ID_GRP_ENGINE,
     ID_LBL_ENGINE, ID_CMB_ENGINE,
+    ID_LBL_MODEL_VER, ID_CMB_MODEL_VER,
     ID_LBL_MULTI, ID_CMB_MULTI,
     ID_LBL_SCALE, ID_CMB_SCALE,
     ID_LBL_ENCODER, ID_CMB_ENCODER,
@@ -91,6 +92,17 @@ const std::vector<ModelEntry> MODELS = {
     {"rife-cuda", L"RIFE CUDA", L"NVIDIA GPUs (CUDA). Fastest option \u2014 recommended if you have an RTX/GTX card.", "NVIDIA"},
     {"rife-ncnn-opt", L"RIFE NCNN (Optimized / Low CPU) [PRO]", L"PRO Exclusive \u2014 Fast low-temp buffer, multi-GPU targeting & zero CPU boost overheating.", ""},
     {"rife-ncnn", L"RIFE NCNN", L"AMD / Intel / NVIDIA (Vulkan). Broader GPU compatibility, no CUDA/PyTorch needed. Note: native 2x only \u2014 4x runs two passes.", ""}
+};
+
+struct RifeModelVerEntry {
+    std::string dir;
+    std::wstring label;
+};
+
+const std::vector<RifeModelVerEntry> RIFE_CUDA_MODELS = {
+    {"RIFE426", L"RIFE 4.26 (Recommended)"},
+    {"RIFE425", L"RIFE 4.25"},
+    {"RIFE40",  L"RIFE 4.0"}
 };
 
 struct EncoderEntry {
@@ -155,6 +167,7 @@ struct AppState {
     
     HWND hGrpEngine = NULL;
     HWND hLblEngine = NULL, hCmbEngine = NULL;
+    HWND hLblModelVer = NULL, hCmbModelVer = NULL;
     HWND hLblMulti = NULL, hCmbMulti = NULL;
     HWND hLblScale = NULL, hCmbScale = NULL;
     HWND hLblEncoder = NULL, hCmbEncoder = NULL;
@@ -183,7 +196,7 @@ struct AppState {
     
     // State flags
     bool showSetup = false;
-    bool isRestoring = false;
+    bool isRestoring = true;
     bool isDarkMode = false;
     HBRUSH hDarkBgBrush = NULL;
     HBRUSH hDarkEditBrush = NULL;
@@ -212,6 +225,7 @@ static AppState g_app;
 // Forward declarations
 void update_layout(bool showSetup);
 void refresh_setup();
+void refresh_model_versions();
 void refresh_presets();
 void refresh_encoders();
 void update_model_desc();
@@ -259,9 +273,11 @@ void load_config() {
     g_app.config["ncnn_exe"] = (g_app.runtimePath / "rife-ncnn" / "rife-ncnn-vulkan.exe").string();
     g_app.config["ncnn_model"] = (g_app.runtimePath / "rife-ncnn" / "rife-v3.1").string();
     g_app.config["engine"] = "rife-cuda";
+    g_app.config["rife_cuda_model"] = "RIFE426";
     g_app.config["preset"] = "p5";
     g_app.config["cq"] = "28";
     g_app.config["encoder"] = "av1_nvenc";
+    g_app.config["theme"] = get_system_dark_mode() ? "dark" : "light";
     
     if (!fs::exists(g_app.cfgPath)) return;
     
@@ -294,6 +310,15 @@ void load_config() {
         if (numStart != std::string::npos && numEnd != std::string::npos && numEnd >= numStart) {
             g_app.config[key] = valStr.substr(numStart, numEnd - numStart + 1);
         }
+    }
+
+    std::string savedTheme = g_app.config["theme"];
+    if (savedTheme == "dark") {
+        g_app.isDarkMode = true;
+    } else if (savedTheme == "light") {
+        g_app.isDarkMode = false;
+    } else {
+        g_app.isDarkMode = get_system_dark_mode();
     }
 }
 
@@ -703,10 +728,16 @@ void job_thread(std::wstring inputPath, std::wstring outPath, int mult, double s
         std::string engine = g_app.config["engine"];
         if (engine.empty()) engine = "rife-cuda";
         
+        std::string selVerDir = g_app.config["rife_cuda_model"];
+        if (selVerDir.empty()) selVerDir = "RIFE426";
+        
         fs::path ffmpegExe = g_app.runtimePath / "ffmpeg" / "ffmpeg.exe";
         fs::path pythonExe = g_app.runtimePath / "py-amp" / "python.exe";
         fs::path rifeScript = g_app.runtimePath / "rife-cuda" / "rife.py";
-        fs::path rifeModel = g_app.runtimePath / "rife-cuda" / "RIFE40";
+        fs::path rifeModel = g_app.runtimePath / "rife-cuda" / selVerDir;
+        if (!fs::exists(rifeModel) && fs::exists(g_app.runtimePath / "rife-cuda" / "RIFE40")) {
+            rifeModel = g_app.runtimePath / "rife-cuda" / "RIFE40";
+        }
         fs::path ncnnExe = g_app.runtimePath / "rife-ncnn" / "rife-ncnn-vulkan.exe";
         fs::path ncnnModel = g_app.runtimePath / "rife-ncnn" / "rife-v3.1";
         
@@ -776,7 +807,7 @@ void job_thread(std::wstring inputPath, std::wstring outPath, int mult, double s
         }
 
         if (engine == "rife-cuda") {
-            log_text(L"Running RIFE CUDA...");
+            log_text(L"Running RIFE CUDA (" + s2ws(selVerDir) + L")...");
             std::wstringstream rcmd;
             rcmd << L"\"" << pythonExe.wstring() << L"\" \"" << rifeScript.wstring()
                  << L"\" --input \"" << srcDir.wstring() << L"\" --output \"" << dstDir.wstring()
@@ -1113,10 +1144,12 @@ void update_layout(bool showSetup) {
         moveCtrl(g_app.hCmbEngine, 100, 349, 320, 150);
         moveCtrl(g_app.hLblMulti, 460, 352, 70, 20);
         moveCtrl(g_app.hCmbMulti, 540, 349, 100, 100);
-        moveCtrl(g_app.hLblScale, 35, 382, 60, 20);
-        moveCtrl(g_app.hCmbScale, 100, 379, 120, 150);
+        moveCtrl(g_app.hLblModelVer, 35, 382, 60, 20);
+        moveCtrl(g_app.hCmbModelVer, 100, 379, 320, 150);
         moveCtrl(g_app.hLblEncoder, 460, 382, 70, 20);
         moveCtrl(g_app.hCmbEncoder, 540, 379, 310, 200);
+        moveCtrl(g_app.hLblScale, 35, 412, 60, 20);
+        moveCtrl(g_app.hCmbScale, 100, 409, 120, 150);
         moveCtrl(g_app.hLblPreset, 460, 412, 70, 20);
         moveCtrl(g_app.hCmbPreset, 540, 409, 140, 150);
         moveCtrl(g_app.hLblCq, 700, 412, 35, 20);
@@ -1140,6 +1173,35 @@ void update_layout(bool showSetup) {
     
     InvalidateRect(g_app.hWnd, NULL, TRUE);
     UpdateWindow(g_app.hWnd);
+}
+
+void refresh_model_versions() {
+    if (!g_app.hCmbModelVer) return;
+    
+    std::string currentDir = g_app.config["rife_cuda_model"];
+    if (currentDir.empty()) currentDir = "RIFE426";
+    
+    int engIdx = (int)SendMessage(g_app.hCmbEngine, CB_GETCURSEL, 0, 0);
+    std::string engKey = (engIdx > 0 && engIdx <= (int)MODELS.size()) ? MODELS[engIdx - 1].key : "";
+    bool isCuda = (engKey == "rife-cuda" || engKey == "rife-cuda-opt");
+
+    SendMessage(g_app.hCmbModelVer, CB_RESETCONTENT, 0, 0);
+
+    if (isCuda) {
+        EnableWindow(g_app.hCmbModelVer, TRUE);
+        int selIdx = 0;
+        for (size_t i = 0; i < RIFE_CUDA_MODELS.size(); ++i) {
+            SendMessage(g_app.hCmbModelVer, CB_ADDSTRING, 0, (LPARAM)RIFE_CUDA_MODELS[i].label.c_str());
+            if (RIFE_CUDA_MODELS[i].dir == currentDir) {
+                selIdx = (int)i;
+            }
+        }
+        SendMessage(g_app.hCmbModelVer, CB_SETCURSEL, selIdx, 0);
+    } else {
+        SendMessage(g_app.hCmbModelVer, CB_ADDSTRING, 0, (LPARAM)L"RIFE v3.1 (Default)");
+        SendMessage(g_app.hCmbModelVer, CB_SETCURSEL, 0, 0);
+        EnableWindow(g_app.hCmbModelVer, FALSE);
+    }
 }
 
 void refresh_setup() {
@@ -1181,7 +1243,13 @@ void refresh_setup() {
             SetWindowTextW(g_app.hStPy, hasPy ? L"✓ Installed" : L"Not installed");
             EnableWindow(g_app.hBtnPy, !hasPy);
             pyOk = hasPy;
-            modelOk = fs::exists(g_app.runtimePath / "rife-cuda" / "rife.py");
+            std::string selVerDir = "RIFE426";
+            int verIdx = (int)SendMessage(g_app.hCmbModelVer, CB_GETCURSEL, 0, 0);
+            if (verIdx >= 0 && verIdx < (int)RIFE_CUDA_MODELS.size()) {
+                selVerDir = RIFE_CUDA_MODELS[verIdx].dir;
+            }
+            modelOk = fs::exists(g_app.runtimePath / "rife-cuda" / "rife.py") &&
+                      (fs::exists(g_app.runtimePath / "rife-cuda" / selVerDir) || fs::exists(g_app.runtimePath / "rife-cuda" / "RIFE40"));
             SetWindowTextW(g_app.hGrpEngine, L"RIFE CUDA -> NVENC");
             SetWindowTextW(g_app.hStModel, modelOk ? L"✓ Installed" : L"Not installed");
             EnableWindow(g_app.hBtnModel, !modelOk);
@@ -1264,16 +1332,23 @@ void apply_theme(bool isDark) {
         DwmSetWindowAttribute(g_app.hWnd, 20 /* DWMWA_USE_IMMERSIVE_DARK_MODE */, &dwmDark, sizeof(dwmDark));
         
         LPCWSTR themeName = isDark ? L"DarkMode_Explorer" : L"Explorer";
-        HWND controls[] = {
-            g_app.hCmbFormat, g_app.hCmbEngine, g_app.hCmbMulti, g_app.hCmbScale,
+        HWND editControls[] = {
+            g_app.hCmbFormat, g_app.hCmbEngine, g_app.hCmbModelVer, g_app.hCmbMulti, g_app.hCmbScale,
             g_app.hCmbEncoder, g_app.hCmbPreset, g_app.hEdtLog,
-            g_app.hEdtInput, g_app.hEdtOutput, g_app.hEdtCq,
+            g_app.hEdtInput, g_app.hEdtOutput, g_app.hEdtCq
+        };
+        for (HWND h : editControls) {
+            if (h) SetWindowTheme(h, themeName, NULL);
+        }
+
+        HWND styledControls[] = {
             g_app.hBtnTheme, g_app.hBtnToggleSetup, g_app.hBtnInput, g_app.hBtnOutput,
             g_app.hBtnFFmpeg, g_app.hBtnPy, g_app.hBtnModel,
-            g_app.hBtnStart, g_app.hBtnCancel, g_app.hProgressBar
+            g_app.hBtnStart, g_app.hBtnCancel, g_app.hProgressBar,
+            g_app.hGrpSetup, g_app.hGrpVideo, g_app.hGrpEngine
         };
-        for (HWND h : controls) {
-            if (h) SetWindowTheme(h, themeName, NULL);
+        for (HWND h : styledControls) {
+            if (h) SetWindowTheme(h, isDark ? L"" : L"Explorer", NULL);
         }
         
         InvalidateRect(g_app.hWnd, NULL, TRUE);
@@ -1286,11 +1361,21 @@ void apply_theme(bool isDark) {
 }
 
 void save_settings() {
-    if (g_app.isRestoring) return;
+    if (g_app.isRestoring || !g_app.hWnd) return;
     
     int engIdx = (int)SendMessage(g_app.hCmbEngine, CB_GETCURSEL, 0, 0);
     if (engIdx > 0 && engIdx <= (int)MODELS.size()) {
         g_app.config["engine"] = MODELS[engIdx - 1].key;
+    }
+    
+    int modelVerIdx = (int)SendMessage(g_app.hCmbModelVer, CB_GETCURSEL, 0, 0);
+    if (modelVerIdx >= 0 && modelVerIdx < (int)RIFE_CUDA_MODELS.size()) {
+        if (engIdx > 0 && engIdx <= (int)MODELS.size()) {
+            std::string engKey = MODELS[engIdx - 1].key;
+            if (engKey == "rife-cuda" || engKey == "rife-cuda-opt") {
+                g_app.config["rife_cuda_model"] = RIFE_CUDA_MODELS[modelVerIdx].dir;
+            }
+        }
     }
     
     int encIdx = (int)SendMessage(g_app.hCmbEncoder, CB_GETCURSEL, 0, 0);
@@ -1316,17 +1401,21 @@ void save_settings() {
 }
 
 void restore_settings() {
-    if (!fs::exists(g_app.cfgPath)) {
-        apply_theme(get_system_dark_mode());
-        return;
-    }
     g_app.isRestoring = true;
-    
+
     std::string savedTheme = g_app.config["theme"];
-    if (!savedTheme.empty()) {
-        apply_theme(savedTheme == "dark");
+    if (savedTheme == "dark") {
+        g_app.isDarkMode = true;
+    } else if (savedTheme == "light") {
+        g_app.isDarkMode = false;
     } else {
-        apply_theme(get_system_dark_mode());
+        g_app.isDarkMode = get_system_dark_mode();
+    }
+    apply_theme(g_app.isDarkMode);
+
+    if (!fs::exists(g_app.cfgPath)) {
+        g_app.isRestoring = false;
+        return;
     }
     
     std::string savedEngine = g_app.config["engine"];
@@ -1355,6 +1444,16 @@ void restore_settings() {
     }
     
     refresh_presets();
+    refresh_model_versions();
+    
+    std::string savedModelVer = g_app.config["rife_cuda_model"];
+    if (savedModelVer.empty()) savedModelVer = "RIFE426";
+    for (size_t i = 0; i < RIFE_CUDA_MODELS.size(); ++i) {
+        if (RIFE_CUDA_MODELS[i].dir == savedModelVer) {
+            SendMessage(g_app.hCmbModelVer, CB_SETCURSEL, i, 0);
+            break;
+        }
+    }
     
     std::string savedPreset = g_app.config["preset"];
     if (!savedPreset.empty()) {
@@ -1377,6 +1476,271 @@ void restore_settings() {
     refresh_setup();
 }
 
+// --- Dark Mode Subclass Procedures ---
+LRESULT CALLBACK DarkButtonSubclassProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData) {
+    switch (uMsg) {
+    case WM_PAINT: {
+        if (!g_app.isDarkMode) return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+        
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, &ps);
+        RECT rc;
+        GetClientRect(hWnd, &rc);
+        
+        BOOL isEnabled = IsWindowEnabled(hWnd);
+        BOOL isPressed = (SendMessage(hWnd, BM_GETSTATE, 0, 0) & BST_PUSHED) != 0;
+        BOOL isHovered = (BOOL)dwRefData;
+        BOOL isDef = (GetWindowLongPtr(hWnd, GWL_STYLE) & BS_DEFPUSHBUTTON) != 0;
+        
+        COLORREF bgClr, borderClr, textClr;
+        if (!isEnabled) {
+            bgClr = RGB(45, 45, 45);
+            borderClr = RGB(60, 60, 60);
+            textClr = RGB(120, 120, 120);
+        } else if (isPressed) {
+            bgClr = RGB(46, 46, 46);
+            borderClr = isDef ? RGB(0, 140, 255) : RGB(85, 85, 85);
+            textClr = RGB(255, 255, 255);
+        } else if (isHovered) {
+            bgClr = RGB(72, 72, 72);
+            borderClr = isDef ? RGB(0, 150, 255) : RGB(110, 110, 110);
+            textClr = RGB(255, 255, 255);
+        } else {
+            bgClr = RGB(58, 58, 58);
+            borderClr = isDef ? RGB(0, 120, 215) : RGB(85, 85, 85);
+            textClr = RGB(245, 245, 245);
+        }
+        
+        HDC memDC = CreateCompatibleDC(hdc);
+        HBITMAP memBM = CreateCompatibleBitmap(hdc, rc.right, rc.bottom);
+        HBITMAP oldBM = (HBITMAP)SelectObject(memDC, memBM);
+        
+        HBRUSH hWinBg = CreateSolidBrush(RGB(40, 40, 40));
+        FillRect(memDC, &rc, hWinBg);
+        DeleteObject(hWinBg);
+        
+        HBRUSH hBg = CreateSolidBrush(bgClr);
+        HPEN hPen = CreatePen(PS_SOLID, 1, borderClr);
+        HBRUSH oldBr = (HBRUSH)SelectObject(memDC, hBg);
+        HPEN oldPen = (HPEN)SelectObject(memDC, hPen);
+        
+        RoundRect(memDC, rc.left, rc.top, rc.right, rc.bottom, 5, 5);
+        
+        SelectObject(memDC, oldBr);
+        SelectObject(memDC, oldPen);
+        DeleteObject(hBg);
+        DeleteObject(hPen);
+        
+        wchar_t text[128] = {0};
+        GetWindowTextW(hWnd, text, 128);
+        
+        HFONT hBtnFont = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0);
+        if (!hBtnFont) hBtnFont = g_app.hFont;
+        HFONT oldFont = (HFONT)SelectObject(memDC, hBtnFont);
+        
+        SetBkMode(memDC, TRANSPARENT);
+        SetTextColor(memDC, textClr);
+        
+        RECT rcText = rc;
+        if (isPressed) {
+            rcText.top += 1;
+            rcText.left += 1;
+        }
+        DrawTextW(memDC, text, -1, &rcText, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        
+        SelectObject(memDC, oldFont);
+        BitBlt(hdc, 0, 0, rc.right, rc.bottom, memDC, 0, 0, SRCCOPY);
+        
+        SelectObject(memDC, oldBM);
+        DeleteObject(memBM);
+        DeleteDC(memDC);
+        
+        EndPaint(hWnd, &ps);
+        return 0;
+    }
+    case WM_MOUSEMOVE: {
+        if (g_app.isDarkMode && !dwRefData) {
+            TRACKMOUSEEVENT tme{sizeof(TRACKMOUSEEVENT), TME_LEAVE, hWnd, 0};
+            TrackMouseEvent(&tme);
+            SetWindowSubclass(hWnd, DarkButtonSubclassProc, uIdSubclass, 1);
+            InvalidateRect(hWnd, NULL, FALSE);
+        }
+        break;
+    }
+    case WM_MOUSELEAVE: {
+        if (g_app.isDarkMode && dwRefData) {
+            SetWindowSubclass(hWnd, DarkButtonSubclassProc, uIdSubclass, 0);
+            InvalidateRect(hWnd, NULL, FALSE);
+        }
+        break;
+    }
+    case WM_ENABLE: {
+        if (g_app.isDarkMode) InvalidateRect(hWnd, NULL, FALSE);
+        break;
+    }
+    case WM_SETTEXT: {
+        LRESULT lr = DefSubclassProc(hWnd, uMsg, wParam, lParam);
+        if (g_app.isDarkMode) InvalidateRect(hWnd, NULL, FALSE);
+        return lr;
+    }
+    case WM_ERASEBKGND: {
+        if (g_app.isDarkMode) return 1;
+        break;
+    }
+    case WM_NCDESTROY: {
+        RemoveWindowSubclass(hWnd, DarkButtonSubclassProc, uIdSubclass);
+        break;
+    }
+    }
+    return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+}
+
+LRESULT CALLBACK DarkProgressSubclassProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData) {
+    switch (uMsg) {
+    case WM_PAINT: {
+        if (!g_app.isDarkMode) return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+        
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, &ps);
+        RECT rc;
+        GetClientRect(hWnd, &rc);
+        
+        HDC memDC = CreateCompatibleDC(hdc);
+        HBITMAP memBM = CreateCompatibleBitmap(hdc, rc.right, rc.bottom);
+        HBITMAP oldBM = (HBITMAP)SelectObject(memDC, memBM);
+        
+        HBRUSH hTrackBr = CreateSolidBrush(RGB(50, 50, 50));
+        HPEN hTrackPen = CreatePen(PS_SOLID, 1, RGB(70, 70, 70));
+        HBRUSH oldBr = (HBRUSH)SelectObject(memDC, hTrackBr);
+        HPEN oldPen = (HPEN)SelectObject(memDC, hTrackPen);
+        
+        RoundRect(memDC, rc.left, rc.top, rc.right, rc.bottom, 4, 4);
+        
+        SelectObject(memDC, oldBr);
+        SelectObject(memDC, oldPen);
+        DeleteObject(hTrackBr);
+        DeleteObject(hTrackPen);
+        
+        int minVal = 0, maxVal = 100;
+        PBRANGE range;
+        SendMessage(hWnd, PBM_GETRANGE, 0, (LPARAM)&range);
+        if (range.iHigh > range.iLow) {
+            minVal = range.iLow;
+            maxVal = range.iHigh;
+        }
+        int pos = (int)SendMessage(hWnd, PBM_GETPOS, 0, 0);
+        if (pos > minVal && maxVal > minVal) {
+            double pct = (double)(pos - minVal) / (double)(maxVal - minVal);
+            if (pct > 1.0) pct = 1.0;
+            RECT rcFill = rc;
+            rcFill.left += 1;
+            rcFill.top += 1;
+            rcFill.bottom -= 1;
+            rcFill.right = rcFill.left + (LONG)((rc.right - rc.left - 2) * pct);
+            if (rcFill.right > rc.right - 1) rcFill.right = rc.right - 1;
+            
+            HBRUSH hFillBr = CreateSolidBrush(RGB(0, 120, 215));
+            HPEN hFillPen = CreatePen(PS_SOLID, 1, RGB(0, 120, 215));
+            HBRUSH oldFillBr = (HBRUSH)SelectObject(memDC, hFillBr);
+            HPEN oldFillPen = (HPEN)SelectObject(memDC, hFillPen);
+            RoundRect(memDC, rcFill.left, rcFill.top, rcFill.right, rcFill.bottom, 3, 3);
+            SelectObject(memDC, oldFillBr);
+            SelectObject(memDC, oldFillPen);
+            DeleteObject(hFillBr);
+            DeleteObject(hFillPen);
+        }
+        
+        BitBlt(hdc, 0, 0, rc.right, rc.bottom, memDC, 0, 0, SRCCOPY);
+        SelectObject(memDC, oldBM);
+        DeleteObject(memBM);
+        DeleteDC(memDC);
+        
+        EndPaint(hWnd, &ps);
+        return 0;
+    }
+    case PBM_SETPOS:
+    case PBM_DELTAPOS:
+    case PBM_SETRANGE:
+    case PBM_SETRANGE32: {
+        LRESULT lr = DefSubclassProc(hWnd, uMsg, wParam, lParam);
+        if (g_app.isDarkMode) InvalidateRect(hWnd, NULL, FALSE);
+        return lr;
+    }
+    case WM_ERASEBKGND: {
+        if (g_app.isDarkMode) return 1;
+        break;
+    }
+    case WM_NCDESTROY: {
+        RemoveWindowSubclass(hWnd, DarkProgressSubclassProc, uIdSubclass);
+        break;
+    }
+    }
+    return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+}
+
+LRESULT CALLBACK DarkGroupBoxSubclassProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData) {
+    if (uMsg == WM_PAINT && g_app.isDarkMode) {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, &ps);
+        RECT rc;
+        GetClientRect(hWnd, &rc);
+        
+        wchar_t text[128] = {0};
+        GetWindowTextW(hWnd, text, 128);
+        
+        HFONT hGrpFont = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0);
+        if (!hGrpFont) hGrpFont = g_app.hFont;
+        HFONT oldFont = (HFONT)SelectObject(hdc, hGrpFont);
+        
+        SIZE textSize{0, 0};
+        int textLen = (int)wcslen(text);
+        if (textLen > 0) {
+            GetTextExtentPoint32W(hdc, text, textLen, &textSize);
+        }
+        
+        int textOffset = 9;
+        int topOffset = textSize.cy > 0 ? (textSize.cy / 2) : 8;
+        
+        HPEN hPen = CreatePen(PS_SOLID, 1, RGB(70, 70, 70));
+        HBRUSH hOldBr = (HBRUSH)SelectObject(hdc, GetStockObject(HOLLOW_BRUSH));
+        HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+        
+        RoundRect(hdc, rc.left, rc.top + topOffset, rc.right, rc.bottom, 4, 4);
+        
+        if (textLen > 0) {
+            RECT rcTextBg = { rc.left + textOffset - 3, rc.top, rc.left + textOffset + textSize.cx + 3, rc.top + textSize.cy };
+            HBRUSH hBg = CreateSolidBrush(RGB(40, 40, 40));
+            FillRect(hdc, &rcTextBg, hBg);
+            DeleteObject(hBg);
+            
+            SetBkMode(hdc, TRANSPARENT);
+            SetTextColor(hdc, RGB(225, 225, 225));
+            RECT rcText = { rc.left + textOffset, rc.top, rc.left + textOffset + textSize.cx, rc.top + textSize.cy };
+            DrawTextW(hdc, text, -1, &rcText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+        }
+        
+        SelectObject(hdc, hOldBr);
+        SelectObject(hdc, hOldPen);
+        SelectObject(hdc, oldFont);
+        DeleteObject(hPen);
+        
+        EndPaint(hWnd, &ps);
+        return 0;
+    }
+    if (uMsg == WM_SETTEXT && g_app.isDarkMode) {
+        LRESULT lr = DefSubclassProc(hWnd, uMsg, wParam, lParam);
+        InvalidateRect(hWnd, NULL, TRUE);
+        return lr;
+    }
+    if (uMsg == WM_ERASEBKGND && g_app.isDarkMode) {
+        return 1;
+    }
+    if (uMsg == WM_NCDESTROY) {
+        RemoveWindowSubclass(hWnd, DarkGroupBoxSubclassProc, uIdSubclass);
+    }
+    return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+}
+
 // Window Procedure
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
@@ -1397,7 +1761,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         DRAWITEMSTRUCT* pDIS = (DRAWITEMSTRUCT*)lParam;
         if (pDIS->CtlType == ODT_COMBOBOX && (pDIS->CtlID == ID_CMB_ENGINE || pDIS->CtlID == ID_CMB_ENCODER)) {
             if (pDIS->itemID == (UINT)-1) {
-                HBRUSH hBr = CreateSolidBrush(g_app.isDarkMode ? RGB(45, 45, 45) : GetSysColor(COLOR_WINDOW));
+                HBRUSH hBr = CreateSolidBrush(g_app.isDarkMode ? RGB(52, 52, 52) : GetSysColor(COLOR_WINDOW));
                 FillRect(pDIS->hDC, &pDIS->rcItem, hBr);
                 DeleteObject(hBr);
                 return TRUE;
@@ -1419,18 +1783,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
             if (isGrayed) {
                 if (isSelected && !isComboEdit) {
-                    bgColor = isDark ? RGB(45, 48, 55) : RGB(235, 238, 245);
+                    bgColor = isDark ? RGB(52, 55, 62) : RGB(235, 238, 245);
                     textColor = isDark ? RGB(140, 140, 140) : RGB(115, 115, 115);
                 } else {
-                    bgColor = isDark ? (isComboEdit ? RGB(45, 45, 45) : RGB(32, 32, 32)) : GetSysColor(COLOR_WINDOW);
-                    textColor = isDark ? RGB(105, 105, 105) : GetSysColor(COLOR_GRAYTEXT);
+                    bgColor = isDark ? (isComboEdit ? RGB(52, 52, 52) : RGB(40, 40, 40)) : GetSysColor(COLOR_WINDOW);
+                    textColor = isDark ? RGB(115, 115, 115) : GetSysColor(COLOR_GRAYTEXT);
                 }
             } else if (isSelected && !isComboEdit) {
                 bgColor = isDark ? RGB(0, 120, 215) : GetSysColor(COLOR_HIGHLIGHT);
                 textColor = isDark ? RGB(255, 255, 255) : GetSysColor(COLOR_HIGHLIGHTTEXT);
             } else {
-                bgColor = isDark ? (isComboEdit ? RGB(45, 45, 45) : RGB(32, 32, 32)) : GetSysColor(COLOR_WINDOW);
-                textColor = isDark ? RGB(240, 240, 240) : GetSysColor(COLOR_WINDOWTEXT);
+                bgColor = isDark ? (isComboEdit ? RGB(52, 52, 52) : RGB(40, 40, 40)) : GetSysColor(COLOR_WINDOW);
+                textColor = isDark ? RGB(245, 245, 245) : GetSysColor(COLOR_WINDOWTEXT);
             }
 
             HBRUSH hBr = CreateSolidBrush(bgColor);
@@ -1453,6 +1817,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     }
 
     case WM_CREATE: {
+        g_app.isRestoring = true;
+        g_app.hWnd = hWnd;
         DragAcceptFiles(hWnd, TRUE);
         // Create Segoe UI Font
         g_app.hFont = CreateFontW(-13, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
@@ -1462,15 +1828,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
             CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
             
-        // Brushes
-        g_app.hDarkBgBrush = CreateSolidBrush(RGB(30, 30, 30));
-        g_app.hDarkEditBrush = CreateSolidBrush(RGB(45, 45, 45));
-        g_app.hDarkLogBrush = CreateSolidBrush(RGB(24, 24, 24));
+        // Brushes - Modern Dark Gray Palette
+        g_app.hDarkBgBrush = CreateSolidBrush(RGB(40, 40, 40));
+        g_app.hDarkEditBrush = CreateSolidBrush(RGB(52, 52, 52));
+        g_app.hDarkLogBrush = CreateSolidBrush(RGB(28, 28, 28));
             
         // Top bar
         g_app.hGpuInfo = CreateWindowW(L"STATIC", (L"Detected GPU: " + g_app.gpuText).c_str(),
             WS_VISIBLE | WS_CHILD | SS_LEFTNOWORDWRAP | SS_NOPREFIX, 20, 15, 600, 24, hWnd, (HMENU)ID_GPU_INFO, g_app.hInstance, NULL);
-        g_app.hBtnTheme = CreateWindowW(L"BUTTON", L"Theme: 🌙 Dark",
+        g_app.hBtnTheme = CreateWindowW(L"BUTTON", g_app.isDarkMode ? L"Theme: 🌙 Dark" : L"Theme: ☀️ Light",
             WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 630, 12, 105, 28, hWnd, (HMENU)ID_BTN_THEME, g_app.hInstance, NULL);
         g_app.hBtnToggleSetup = CreateWindowW(L"BUTTON", L"Runtime Downloads",
             WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 742, 12, 130, 28, hWnd, (HMENU)ID_BTN_TOGGLE_SETUP, g_app.hInstance, NULL);
@@ -1546,14 +1912,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         SendMessage(g_app.hCmbMulti, CB_ADDSTRING, 0, (LPARAM)L"4x");
         SendMessage(g_app.hCmbMulti, CB_SETCURSEL, 0, 0);
         
-        g_app.hLblScale = CreateWindowW(L"STATIC", L"Scale:", WS_VISIBLE | WS_CHILD | SS_LEFT, 35, 382, 60, 20, hWnd, (HMENU)ID_LBL_SCALE, g_app.hInstance, NULL);
-        g_app.hCmbScale = CreateWindowW(L"COMBOBOX", L"", WS_VISIBLE | WS_CHILD | CBS_DROPDOWNLIST | WS_VSCROLL, 100, 379, 120, 150, hWnd, (HMENU)ID_CMB_SCALE, g_app.hInstance, NULL);
-        SendMessage(g_app.hCmbScale, CB_ADDSTRING, 0, (LPARAM)L"0.25");
-        SendMessage(g_app.hCmbScale, CB_ADDSTRING, 0, (LPARAM)L"0.5");
-        SendMessage(g_app.hCmbScale, CB_ADDSTRING, 0, (LPARAM)L"1.0");
-        SendMessage(g_app.hCmbScale, CB_ADDSTRING, 0, (LPARAM)L"2.0");
-        SendMessage(g_app.hCmbScale, CB_ADDSTRING, 0, (LPARAM)L"4.0");
-        SendMessage(g_app.hCmbScale, CB_SETCURSEL, 2, 0);
+        g_app.hLblModelVer = CreateWindowW(L"STATIC", L"Model:", WS_VISIBLE | WS_CHILD | SS_LEFT, 35, 382, 60, 20, hWnd, (HMENU)ID_LBL_MODEL_VER, g_app.hInstance, NULL);
+        g_app.hCmbModelVer = CreateWindowW(L"COMBOBOX", L"", WS_VISIBLE | WS_CHILD | CBS_DROPDOWNLIST | WS_VSCROLL, 100, 379, 320, 150, hWnd, (HMENU)ID_CMB_MODEL_VER, g_app.hInstance, NULL);
         
         g_app.hLblEncoder = CreateWindowW(L"STATIC", L"Encoder:", WS_VISIBLE | WS_CHILD | SS_LEFT, 460, 382, 70, 20, hWnd, (HMENU)ID_LBL_ENCODER, g_app.hInstance, NULL);
         g_app.hCmbEncoder = CreateWindowW(L"COMBOBOX", L"", WS_VISIBLE | WS_CHILD | CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL, 540, 379, 310, 220, hWnd, (HMENU)ID_CMB_ENCODER, g_app.hInstance, NULL);
@@ -1569,6 +1929,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             SendMessage(g_app.hCmbEncoder, CB_SETITEMDATA, i + 1, ok ? 1 : 0);
         }
         SendMessage(g_app.hCmbEncoder, CB_SETCURSEL, 0, 0);
+
+        g_app.hLblScale = CreateWindowW(L"STATIC", L"Scale:", WS_VISIBLE | WS_CHILD | SS_LEFT, 35, 412, 60, 20, hWnd, (HMENU)ID_LBL_SCALE, g_app.hInstance, NULL);
+        g_app.hCmbScale = CreateWindowW(L"COMBOBOX", L"", WS_VISIBLE | WS_CHILD | CBS_DROPDOWNLIST | WS_VSCROLL, 100, 409, 120, 150, hWnd, (HMENU)ID_CMB_SCALE, g_app.hInstance, NULL);
+        SendMessage(g_app.hCmbScale, CB_ADDSTRING, 0, (LPARAM)L"0.25");
+        SendMessage(g_app.hCmbScale, CB_ADDSTRING, 0, (LPARAM)L"0.5");
+        SendMessage(g_app.hCmbScale, CB_ADDSTRING, 0, (LPARAM)L"1.0");
+        SendMessage(g_app.hCmbScale, CB_ADDSTRING, 0, (LPARAM)L"2.0");
+        SendMessage(g_app.hCmbScale, CB_ADDSTRING, 0, (LPARAM)L"4.0");
+        SendMessage(g_app.hCmbScale, CB_SETCURSEL, 2, 0);
         
         g_app.hLblPreset = CreateWindowW(L"STATIC", L"Preset:", WS_VISIBLE | WS_CHILD | SS_LEFT, 460, 412, 70, 20, hWnd, (HMENU)ID_LBL_PRESET, g_app.hInstance, NULL);
         g_app.hCmbPreset = CreateWindowW(L"COMBOBOX", L"", WS_VISIBLE | WS_CHILD | CBS_DROPDOWNLIST | WS_VSCROLL, 540, 409, 140, 150, hWnd, (HMENU)ID_CMB_PRESET, g_app.hInstance, NULL);
@@ -1611,6 +1980,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         SendMessage(g_app.hGpuInfo, WM_SETFONT, (WPARAM)g_app.hFontBold, TRUE);
         SendMessage(g_app.hBtnStart, WM_SETFONT, (WPARAM)g_app.hFontBold, TRUE);
         
+        HWND darkButtons[] = {
+            g_app.hBtnTheme, g_app.hBtnToggleSetup,
+            g_app.hBtnFFmpeg, g_app.hBtnPy, g_app.hBtnModel,
+            g_app.hBtnInput, g_app.hBtnOutput,
+            g_app.hBtnStart, g_app.hBtnCancel
+        };
+        for (HWND hBtn : darkButtons) {
+            if (hBtn) SetWindowSubclass(hBtn, DarkButtonSubclassProc, (UINT_PTR)hBtn, 0);
+        }
+
+        HWND darkGroups[] = { g_app.hGrpSetup, g_app.hGrpVideo, g_app.hGrpEngine };
+        for (HWND hGrp : darkGroups) {
+            if (hGrp) SetWindowSubclass(hGrp, DarkGroupBoxSubclassProc, (UINT_PTR)hGrp, 0);
+        }
+
+        if (g_app.hProgressBar) {
+            SetWindowSubclass(g_app.hProgressBar, DarkProgressSubclassProc, (UINT_PTR)g_app.hProgressBar, 0);
+        }
+
         refresh_presets();
         refresh_encoders();
         restore_settings();
@@ -1699,7 +2087,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             } else {
                 g_app.lastValidEngineIdx = 0;
             }
+            refresh_model_versions();
             update_model_desc();
+            refresh_setup();
+            save_settings();
+        }
+        else if (id == ID_CMB_MODEL_VER && code == CBN_SELCHANGE) {
             refresh_setup();
             save_settings();
         }
@@ -1855,7 +2248,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         if (hCtrl == g_app.hEdtLog) {
             if (g_app.isDarkMode) {
                 SetTextColor(hdcStatic, RGB(225, 225, 225));
-                SetBkColor(hdcStatic, RGB(24, 24, 24));
+                SetBkColor(hdcStatic, RGB(28, 28, 28));
                 return (LRESULT)g_app.hDarkLogBrush;
             } else {
                 SetTextColor(hdcStatic, GetSysColor(COLOR_WINDOWTEXT));
@@ -1865,7 +2258,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
         SetBkMode(hdcStatic, TRANSPARENT);
         if (g_app.isDarkMode) {
-            SetTextColor(hdcStatic, RGB(225, 225, 225));
+            SetTextColor(hdcStatic, RGB(235, 235, 235));
             return (LRESULT)g_app.hDarkBgBrush;
         } else {
             SetTextColor(hdcStatic, GetSysColor(COLOR_WINDOWTEXT));
@@ -1877,7 +2270,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         HDC hdcEdit = (HDC)wParam;
         if (g_app.isDarkMode) {
             SetTextColor(hdcEdit, RGB(245, 245, 245));
-            SetBkColor(hdcEdit, RGB(45, 45, 45));
+            SetBkColor(hdcEdit, RGB(52, 52, 52));
             return (LRESULT)g_app.hDarkEditBrush;
         } else {
             SetTextColor(hdcEdit, GetSysColor(COLOR_WINDOWTEXT));
@@ -1890,10 +2283,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         HDC hdc = (HDC)wParam;
         if (g_app.isDarkMode) {
             SetTextColor(hdc, RGB(245, 245, 245));
-            SetBkColor(hdc, RGB(45, 45, 45));
+            SetBkColor(hdc, RGB(52, 52, 52));
             return (LRESULT)g_app.hDarkEditBrush;
         }
         return DefWindowProcW(hWnd, uMsg, wParam, lParam);
+    }
+    
+    case WM_CLOSE: {
+        if (!g_app.isRestoring) {
+            save_settings();
+        }
+        DestroyWindow(hWnd);
+        return 0;
     }
     
     case WM_DESTROY: {
@@ -1991,6 +2392,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     if (hAppIcon) SendMessageW(g_app.hWnd, WM_SETICON, ICON_BIG, (LPARAM)hAppIcon);
     if (hAppIconSm) SendMessageW(g_app.hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hAppIconSm);
     
+    apply_theme(g_app.isDarkMode);
+
     ShowWindow(g_app.hWnd, nCmdShow);
     UpdateWindow(g_app.hWnd);
     
