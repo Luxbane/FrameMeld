@@ -100,9 +100,9 @@ struct RifeModelVerEntry {
 };
 
 const std::vector<RifeModelVerEntry> RIFE_CUDA_MODELS = {
-    {"RIFE426", L"RIFE 4.26 (Recommended)"},
-    {"RIFE425", L"RIFE 4.25"},
-    {"RIFE40",  L"RIFE 4.0"}
+    {"RIFE426", L"RIFE 4.26 (Recommended \u2014 Best Quality)"},
+    {"RIFE425", L"RIFE 4.25 (Stable \u2014 Crisp & Consistent)"},
+    {"RIFE40",  L"RIFE 4.0 (Classic \u2014 Fast & Low VRAM)"}
 };
 
 struct EncoderEntry {
@@ -1198,7 +1198,7 @@ void refresh_model_versions() {
         }
         SendMessage(g_app.hCmbModelVer, CB_SETCURSEL, selIdx, 0);
     } else {
-        SendMessage(g_app.hCmbModelVer, CB_ADDSTRING, 0, (LPARAM)L"RIFE v3.1 (Default)");
+        SendMessage(g_app.hCmbModelVer, CB_ADDSTRING, 0, (LPARAM)L"RIFE v3.1 (Default \u2014 Vulkan Universal)");
         SendMessage(g_app.hCmbModelVer, CB_SETCURSEL, 0, 0);
         EnableWindow(g_app.hCmbModelVer, FALSE);
     }
