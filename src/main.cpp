@@ -38,6 +38,7 @@ enum ControlID {
     ID_GPU_INFO = 1001,
     ID_BTN_TOGGLE_SETUP,
     ID_BTN_THEME,
+    ID_BTN_DONATE,
     
     // Setup group
     ID_GRP_SETUP,
@@ -149,6 +150,7 @@ struct AppState {
     
     // UI Handles
     HWND hGpuInfo = NULL;
+    HWND hBtnDonate = NULL;
     HWND hBtnTheme = NULL;
     HWND hBtnToggleSetup = NULL;
     
@@ -1342,7 +1344,7 @@ void apply_theme(bool isDark) {
         }
 
         HWND styledControls[] = {
-            g_app.hBtnTheme, g_app.hBtnToggleSetup, g_app.hBtnInput, g_app.hBtnOutput,
+            g_app.hBtnDonate, g_app.hBtnTheme, g_app.hBtnToggleSetup, g_app.hBtnInput, g_app.hBtnOutput,
             g_app.hBtnFFmpeg, g_app.hBtnPy, g_app.hBtnModel,
             g_app.hBtnStart, g_app.hBtnCancel, g_app.hProgressBar,
             g_app.hGrpSetup, g_app.hGrpVideo, g_app.hGrpEngine
@@ -1835,11 +1837,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             
         // Top bar
         g_app.hGpuInfo = CreateWindowW(L"STATIC", (L"Detected GPU: " + g_app.gpuText).c_str(),
-            WS_VISIBLE | WS_CHILD | SS_LEFTNOWORDWRAP | SS_NOPREFIX, 20, 15, 600, 24, hWnd, (HMENU)ID_GPU_INFO, g_app.hInstance, NULL);
+            WS_VISIBLE | WS_CHILD | SS_LEFTNOWORDWRAP | SS_NOPREFIX, 20, 15, 500, 24, hWnd, (HMENU)ID_GPU_INFO, g_app.hInstance, NULL);
+        g_app.hBtnDonate = CreateWindowW(L"BUTTON", L"☕ Ko-fi",
+            WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 530, 12, 92, 28, hWnd, (HMENU)ID_BTN_DONATE, g_app.hInstance, NULL);
         g_app.hBtnTheme = CreateWindowW(L"BUTTON", g_app.isDarkMode ? L"Theme: 🌙 Dark" : L"Theme: ☀️ Light",
-            WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 630, 12, 105, 28, hWnd, (HMENU)ID_BTN_THEME, g_app.hInstance, NULL);
+            WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 628, 12, 105, 28, hWnd, (HMENU)ID_BTN_THEME, g_app.hInstance, NULL);
         g_app.hBtnToggleSetup = CreateWindowW(L"BUTTON", L"Runtime Downloads",
-            WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 742, 12, 130, 28, hWnd, (HMENU)ID_BTN_TOGGLE_SETUP, g_app.hInstance, NULL);
+            WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 739, 12, 133, 28, hWnd, (HMENU)ID_BTN_TOGGLE_SETUP, g_app.hInstance, NULL);
             
         // Setup Group
         g_app.hGrpSetup = CreateWindowW(L"BUTTON", L"Setup — Required Downloads",
@@ -1981,7 +1985,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         SendMessage(g_app.hBtnStart, WM_SETFONT, (WPARAM)g_app.hFontBold, TRUE);
         
         HWND darkButtons[] = {
-            g_app.hBtnTheme, g_app.hBtnToggleSetup,
+            g_app.hBtnDonate, g_app.hBtnTheme, g_app.hBtnToggleSetup,
             g_app.hBtnFFmpeg, g_app.hBtnPy, g_app.hBtnModel,
             g_app.hBtnInput, g_app.hBtnOutput,
             g_app.hBtnStart, g_app.hBtnCancel
@@ -2009,7 +2013,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         WORD id = LOWORD(wParam);
         WORD code = HIWORD(wParam);
         
-        if (id == ID_BTN_TOGGLE_SETUP) {
+        if (id == ID_BTN_DONATE) {
+            ShellExecuteW(NULL, L"open", L"https://ko-fi.com/luxbane", NULL, NULL, SW_SHOWNORMAL);
+        }
+        else if (id == ID_BTN_TOGGLE_SETUP) {
             g_app.showSetup = !g_app.showSetup;
             refresh_setup();
         }
@@ -2383,7 +2390,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     int x = (screenW - w) / 2;
     int y = (screenH - h) / 2;
     
-    g_app.hWnd = CreateWindowExW(0, L"FrameMeldMainWindow", L"FrameMeld v1.4.1",
+    g_app.hWnd = CreateWindowExW(0, L"FrameMeldMainWindow", L"FrameMeld v1.5.1",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
         x, y, w, h, NULL, NULL, hInstance, NULL);
         

@@ -1,8 +1,8 @@
 @echo off
 setlocal EnableExtensions
-title FrameMeld v1.4.1 C++ Builder
+title FrameMeld v1.5.1 C++ Builder
 echo ============================================
-echo FrameMeld v1.4.1 C++ Builder (MinGW g++)
+echo FrameMeld v1.5.1 C++ Builder (MinGW g++)
 echo ============================================
 
 where g++ >nul 2>&1
@@ -41,7 +41,7 @@ windres -i "src\resource.rc" -o "src\resource.o"
 if errorlevel 1 goto BUILDFAIL
 
 echo Compiling FrameMeld.exe with g++ (C++17, -O3, standalone)...
-g++ -std=c++17 -O3 -mwindows -municode -static -static-libgcc -static-libstdc++ -s "src\main.cpp" "src\resource.o" -o "dist\FrameMeld\FrameMeld.exe" -ldxgi -lcomctl32 -lcomdlg32 -luxtheme -lole32 -lshlwapi -lurlmon -luuid -ldwmapi
+g++ -std=c++17 -O3 -mwindows -municode -static -static-libgcc -static-libstdc++ -s "src\main.cpp" "src\resource.o" -o "dist\FrameMeld\FrameMeld.exe" -ldxgi -lcomctl32 -lcomdlg32 -luxtheme -lole32 -lshlwapi -lurlmon -luuid -ldwmapi -lshell32
 
 if errorlevel 1 goto BUILDFAIL
 
