@@ -106,6 +106,13 @@ const std::vector<RifeModelVerEntry> RIFE_CUDA_MODELS = {
     {"RIFE40",  L"RIFE 4.0 (Classic \u2014 Fast & Low VRAM)"}
 };
 
+const std::vector<RifeModelVerEntry> RIFE_NCNN_MODELS = {
+    {"rife-v4.6",  L"RIFE 4.6 (Recommended \u2014 Best Quality)"},
+    {"rife-v4",    L"RIFE 4.0 (Fast \u2014 Low VRAM)"},
+    {"rife-anime", L"RIFE Anime (2D Animation)"},
+    {"rife-v3.1",  L"RIFE 3.1 (Classic \u2014 Universal Vulkan)"}
+};
+
 struct EncoderEntry {
     std::wstring label;
     std::string id;
@@ -273,9 +280,10 @@ void load_config() {
     g_app.config["rife_script"] = (g_app.runtimePath / "rife-cuda" / "rife.py").string();
     g_app.config["model"] = (g_app.runtimePath / "rife-cuda" / "RIFE40").string();
     g_app.config["ncnn_exe"] = (g_app.runtimePath / "rife-ncnn" / "rife-ncnn-vulkan.exe").string();
-    g_app.config["ncnn_model"] = (g_app.runtimePath / "rife-ncnn" / "rife-v3.1").string();
+    g_app.config["ncnn_model"] = (g_app.runtimePath / "rife-ncnn" / "rife-v4.6").string();
     g_app.config["engine"] = "rife-cuda";
     g_app.config["rife_cuda_model"] = "RIFE426";
+    g_app.config["rife_ncnn_model"] = "rife-v4.6";
     g_app.config["preset"] = "p5";
     g_app.config["cq"] = "28";
     g_app.config["encoder"] = "av1_nvenc";
@@ -740,8 +748,20 @@ void job_thread(std::wstring inputPath, std::wstring outPath, int mult, double s
         if (!fs::exists(rifeModel) && fs::exists(g_app.runtimePath / "rife-cuda" / "RIFE40")) {
             rifeModel = g_app.runtimePath / "rife-cuda" / "RIFE40";
         }
+        std::string selNcnnVer = g_app.config.find("rife_ncnn_model") != g_app.config.end() ? g_app.config["rife_ncnn_model"] : "rife-v4.6";
+        int ncnnVerIdx = (int)SendMessage(g_app.hCmbModelVer, CB_GETCURSEL, 0, 0);
+        if (engine == "rife-ncnn" && ncnnVerIdx >= 0 && ncnnVerIdx < (int)RIFE_NCNN_MODELS.size()) {
+            selNcnnVer = RIFE_NCNN_MODELS[ncnnVerIdx].dir;
+        }
         fs::path ncnnExe = g_app.runtimePath / "rife-ncnn" / "rife-ncnn-vulkan.exe";
-        fs::path ncnnModel = g_app.runtimePath / "rife-ncnn" / "rife-v3.1";
+        fs::path ncnnModel = g_app.runtimePath / "rife-ncnn" / selNcnnVer;
+        if (!fs::exists(ncnnModel)) {
+            if (fs::exists(g_app.runtimePath / "rife-ncnn" / "rife-v4.6")) {
+                ncnnModel = g_app.runtimePath / "rife-ncnn" / "rife-v4.6";
+            } else if (fs::exists(g_app.runtimePath / "rife-ncnn" / "rife-v3.1")) {
+                ncnnModel = g_app.runtimePath / "rife-ncnn" / "rife-v3.1";
+            }
+        }
         
         if (!fs::exists(ffmpegExe)) throw std::runtime_error("Invalid path: ffmpeg");
         if (engine == "rife-cuda") {
@@ -1180,17 +1200,17 @@ void update_layout(bool showSetup) {
 void refresh_model_versions() {
     if (!g_app.hCmbModelVer) return;
     
-    std::string currentDir = g_app.config["rife_cuda_model"];
-    if (currentDir.empty()) currentDir = "RIFE426";
-    
     int engIdx = (int)SendMessage(g_app.hCmbEngine, CB_GETCURSEL, 0, 0);
     std::string engKey = (engIdx > 0 && engIdx <= (int)MODELS.size()) ? MODELS[engIdx - 1].key : "";
     bool isCuda = (engKey == "rife-cuda" || engKey == "rife-cuda-opt");
+    bool isNcnn = (engKey == "rife-ncnn" || engKey == "rife-ncnn-opt");
 
     SendMessage(g_app.hCmbModelVer, CB_RESETCONTENT, 0, 0);
 
     if (isCuda) {
         EnableWindow(g_app.hCmbModelVer, TRUE);
+        std::string currentDir = g_app.config["rife_cuda_model"];
+        if (currentDir.empty()) currentDir = "RIFE426";
         int selIdx = 0;
         for (size_t i = 0; i < RIFE_CUDA_MODELS.size(); ++i) {
             SendMessage(g_app.hCmbModelVer, CB_ADDSTRING, 0, (LPARAM)RIFE_CUDA_MODELS[i].label.c_str());
@@ -1199,8 +1219,20 @@ void refresh_model_versions() {
             }
         }
         SendMessage(g_app.hCmbModelVer, CB_SETCURSEL, selIdx, 0);
+    } else if (isNcnn) {
+        EnableWindow(g_app.hCmbModelVer, TRUE);
+        std::string currentDir = g_app.config["rife_ncnn_model"];
+        if (currentDir.empty()) currentDir = "rife-v4.6";
+        int selIdx = 0;
+        for (size_t i = 0; i < RIFE_NCNN_MODELS.size(); ++i) {
+            SendMessage(g_app.hCmbModelVer, CB_ADDSTRING, 0, (LPARAM)RIFE_NCNN_MODELS[i].label.c_str());
+            if (RIFE_NCNN_MODELS[i].dir == currentDir) {
+                selIdx = (int)i;
+            }
+        }
+        SendMessage(g_app.hCmbModelVer, CB_SETCURSEL, selIdx, 0);
     } else {
-        SendMessage(g_app.hCmbModelVer, CB_ADDSTRING, 0, (LPARAM)L"RIFE v3.1 (Default \u2014 Vulkan Universal)");
+        SendMessage(g_app.hCmbModelVer, CB_ADDSTRING, 0, (LPARAM)L"Default");
         SendMessage(g_app.hCmbModelVer, CB_SETCURSEL, 0, 0);
         EnableWindow(g_app.hCmbModelVer, FALSE);
     }
@@ -1259,7 +1291,15 @@ void refresh_setup() {
             SetWindowTextW(g_app.hStPy, L"Not needed for this engine");
             EnableWindow(g_app.hBtnPy, FALSE);
             pyOk = true;
-            modelOk = fs::exists(g_app.runtimePath / "rife-ncnn" / "rife-ncnn-vulkan.exe");
+            std::string selVerDir = "rife-v4.6";
+            int verIdx = (int)SendMessage(g_app.hCmbModelVer, CB_GETCURSEL, 0, 0);
+            if (verIdx >= 0 && verIdx < (int)RIFE_NCNN_MODELS.size()) {
+                selVerDir = RIFE_NCNN_MODELS[verIdx].dir;
+            }
+            fs::path ncnnDir = g_app.runtimePath / "rife-ncnn";
+            bool hasExe = fs::exists(ncnnDir / "rife-ncnn-vulkan.exe");
+            bool hasModel = fs::exists(ncnnDir / selVerDir) || fs::exists(ncnnDir / "rife-v4.6") || fs::exists(ncnnDir / "rife-v3.1");
+            modelOk = hasExe && hasModel;
             SetWindowTextW(g_app.hGrpEngine, L"RIFE NCNN -> Encoder");
             SetWindowTextW(g_app.hStModel, modelOk ? L"✓ Installed" : L"Not installed");
             EnableWindow(g_app.hBtnModel, !modelOk);
@@ -1371,12 +1411,12 @@ void save_settings() {
     }
     
     int modelVerIdx = (int)SendMessage(g_app.hCmbModelVer, CB_GETCURSEL, 0, 0);
-    if (modelVerIdx >= 0 && modelVerIdx < (int)RIFE_CUDA_MODELS.size()) {
-        if (engIdx > 0 && engIdx <= (int)MODELS.size()) {
-            std::string engKey = MODELS[engIdx - 1].key;
-            if (engKey == "rife-cuda" || engKey == "rife-cuda-opt") {
-                g_app.config["rife_cuda_model"] = RIFE_CUDA_MODELS[modelVerIdx].dir;
-            }
+    if (engIdx > 0 && engIdx <= (int)MODELS.size()) {
+        std::string engKey = MODELS[engIdx - 1].key;
+        if ((engKey == "rife-cuda" || engKey == "rife-cuda-opt") && modelVerIdx >= 0 && modelVerIdx < (int)RIFE_CUDA_MODELS.size()) {
+            g_app.config["rife_cuda_model"] = RIFE_CUDA_MODELS[modelVerIdx].dir;
+        } else if ((engKey == "rife-ncnn" || engKey == "rife-ncnn-opt") && modelVerIdx >= 0 && modelVerIdx < (int)RIFE_NCNN_MODELS.size()) {
+            g_app.config["rife_ncnn_model"] = RIFE_NCNN_MODELS[modelVerIdx].dir;
         }
     }
     
@@ -1448,12 +1488,25 @@ void restore_settings() {
     refresh_presets();
     refresh_model_versions();
     
-    std::string savedModelVer = g_app.config["rife_cuda_model"];
-    if (savedModelVer.empty()) savedModelVer = "RIFE426";
-    for (size_t i = 0; i < RIFE_CUDA_MODELS.size(); ++i) {
-        if (RIFE_CUDA_MODELS[i].dir == savedModelVer) {
-            SendMessage(g_app.hCmbModelVer, CB_SETCURSEL, i, 0);
-            break;
+    int curEngIdx = (int)SendMessage(g_app.hCmbEngine, CB_GETCURSEL, 0, 0);
+    std::string curEngKey = (curEngIdx > 0 && curEngIdx <= (int)MODELS.size()) ? MODELS[curEngIdx - 1].key : "";
+    if (curEngKey == "rife-cuda" || curEngKey == "rife-cuda-opt") {
+        std::string savedModelVer = g_app.config["rife_cuda_model"];
+        if (savedModelVer.empty()) savedModelVer = "RIFE426";
+        for (size_t i = 0; i < RIFE_CUDA_MODELS.size(); ++i) {
+            if (RIFE_CUDA_MODELS[i].dir == savedModelVer) {
+                SendMessage(g_app.hCmbModelVer, CB_SETCURSEL, i, 0);
+                break;
+            }
+        }
+    } else if (curEngKey == "rife-ncnn" || curEngKey == "rife-ncnn-opt") {
+        std::string savedModelVer = g_app.config["rife_ncnn_model"];
+        if (savedModelVer.empty()) savedModelVer = "rife-v4.6";
+        for (size_t i = 0; i < RIFE_NCNN_MODELS.size(); ++i) {
+            if (RIFE_NCNN_MODELS[i].dir == savedModelVer) {
+                SendMessage(g_app.hCmbModelVer, CB_SETCURSEL, i, 0);
+                break;
+            }
         }
     }
     
