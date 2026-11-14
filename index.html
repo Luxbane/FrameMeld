@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- ================================================================= -->
+    <!-- GOOGLE SEARCH CONSOLE VERIFICATION                                -->
+    <!-- Paste your Google Search Console verification code below:         -->
+    <!-- ================================================================= -->
+    <meta name="google-site-verification" content="google5fea2c682a88ccf5.html" />
+
+    <!-- SEO & Metadata -->
+    <title>FrameMeld — AI Video Frame Interpolation GUI</title>
+    <meta name="description" content="FrameMeld is a lightweight native desktop GUI for RIFE AI video frame interpolation (CUDA & NCNN Vulkan) with hardware-accelerated encoding (AV1, HEVC, H.264).">
+    <meta name="keywords" content="FrameMeld, RIFE, AI frame interpolation, 60fps, 120fps, video upscaler, NVENC, AMF, QSV, Vulkan, NCNN, CUDA">
+    <meta property="og:title" content="FrameMeld — AI Video Frame Interpolation GUI">
+    <meta property="og:description" content="RIFE video frame interpolation with hardware-accelerated encoding (AV1 / HEVC / H.264) in a lightweight native Win32 GUI.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://luxbane.github.io/FrameMeld/">
+
+    <style>
+        :root {
+            --bg-color: #0f1117;
+            --card-bg: #161922;
+            --card-border: #232838;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --accent-pro: #ec4899;
+            --accent-pro-hover: #db2777;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --badge-bg: #1e2433;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 2.5rem 1.5rem;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .badges {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background-color: var(--badge-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 9999px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.85rem;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.75rem;
+            background: linear-gradient(135deg, #60a5fa, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .tagline {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 680px;
+            margin: 0 auto 1.75rem auto;
+        }
+
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn-pro {
+            background-color: var(--accent-pro);
+            color: #ffffff;
+        }
+
+        .btn-pro:hover {
+            background-color: var(--accent-pro-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--card-border);
+        }
+
+        .btn-secondary:hover {
+            background-color: #1e2230;
+            border-color: #374151;
+            transform: translateY(-2px);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 3rem 0;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: #3b82f6;
+        }
+
+        .card-icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: #ffffff;
+        }
+
+        .card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .highlight-box {
+            background: linear-gradient(180deg, rgba(59, 130, 246, 0.08) 0%, rgba(22, 25, 34, 0.9) 100%);
+            border: 1px solid #1d4ed8;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+
+        .highlight-box h2 {
+            font-size: 1.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .highlight-box p {
+            color: var(--text-muted);
+            max-width: 650px;
+            margin: 0 auto 1.5rem auto;
+        }
+
+        footer {
+            margin-top: auto;
+            border-top: 1px solid var(--card-border);
+            padding: 2rem 1.5rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div class="badges">
+                <span class="badge">v1.5.1</span>
+                <span class="badge">Open Source (MIT)</span>
+                <span class="badge">Windows 10/11 64-bit</span>
+            </div>
+            <h1>FrameMeld</h1>
+            <p class="tagline">
+                Turn standard 24/30 FPS videos into buttery-smooth 60 FPS and 120 FPS using state-of-the-art RIFE AI and hardware-accelerated video encoding.
+            </p>
+            <div class="cta-buttons">
+                <a href="https://github.com/Luxbane/FrameMeld/releases/latest" class="btn btn-primary" target="_blank" rel="noopener">
+                    ⬇️ Download Free v1.5.1
+                </a>
+                <a href="https://luxbane.itch.io/framemeld" class="btn btn-pro" target="_blank" rel="noopener">
+                    ⭐ itch.io (Pro & Demo)
+                </a>
+                <a href="https://github.com/Luxbane/FrameMeld" class="btn btn-secondary" target="_blank" rel="noopener">
+                    📦 GitHub Source Code
+                </a>
+            </div>
+        </header>
+
+        <section class="features-grid">
+            <div class="card">
+                <div class="card-icon">⚡</div>
+                <h3>Native C++17 Performance</h3>
+                <p>Built with native Win32. Starts in under 0.05 seconds, consumes a tiny ~25 MB RAM footprint, and has zero web or Electron bloat.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">🧠</div>
+                <h3>Dual RIFE AI Engines</h3>
+                <p>Choose <strong>RIFE CUDA</strong> for maximum NVIDIA performance (v4.0, v4.25, v4.26) or <strong>RIFE NCNN</strong> for cross-vendor AMD/Intel/NVIDIA Vulkan acceleration.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">🚀</div>
+                <h3>Hardware Video Encoding</h3>
+                <p>Direct GPU encoding with NVIDIA NVENC, AMD AMF, Intel QSV, or CPU Software across modern AV1, HEVC, and H.264 formats.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">🎯</div>
+                <h3>Smart Auto-Detection</h3>
+                <p>Instantly detects installed GPUs and automatically adapts selectable codecs, presets, and engines to match your exact hardware.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">🌙</div>
+                <h3>Dark & Light Theme</h3>
+                <p>Clean, native Win32 interface with one-click theme switcher, automatic Windows theme detection, and persistent settings.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">📦</div>
+                <h3>Automated Setup</h3>
+                <p>Self-contained runtime manager downloads only the tools you need (FFmpeg + chosen RIFE model) directly on first launch.</p>
+            </div>
+        </section>
+
+        <section class="highlight-box">
+            <h2>❄️ Need Cooler Temps & Zero SSD Wear?</h2>
+            <p>
+                <strong>FrameMeld Pro ($5)</strong> features an exclusive <em>Direct In-Memory Streaming Pipe</em>: frames flow directly via RAM memory without writing tens of thousands of temporary PNG files to SSD. Keeps CPU cool at 60–75°C and extends SSD lifespan!
+            </p>
+            <a href="https://luxbane.itch.io/framemeld" class="btn btn-pro" target="_blank" rel="noopener">
+                Get FrameMeld Pro on itch.io ($5)
+            </a>
+        </section>
+    </div>
+
+    <footer>
+        <p>
+            &copy; 2026 <strong>FrameMeld</strong> by <a href="https://github.com/Luxbane" target="_blank" rel="noopener">Luxbane</a>. Released under the MIT License.<br>
+            <a href="https://github.com/Luxbane/FrameMeld" target="_blank" rel="noopener">GitHub</a> &bull;
+            <a href="https://luxbane.itch.io/framemeld" target="_blank" rel="noopener">itch.io</a> &bull;
+            <a href="https://huggingface.co/Luxbane/FrameMeld" target="_blank" rel="noopener">Hugging Face</a> &bull;
+            <a href="https://ko-fi.com/luxbane" target="_blank" rel="noopener">Support on Ko-fi</a>
+        </p>
+    </footer>
+
+</body>
+</html>
